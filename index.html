@@ -281,7 +281,7 @@
                     This is a <span class="text-shadowRed font-semibold">one-time promotional offer</span>. Once you click "Confirm & Pay", the promo will be marked as used on this device, <span class="text-white font-medium">even if you cancel or close the checkout page</span>.
                 </p>
                 <p class="text-zinc-500 text-[11px] mt-3">
-                    The offer resets automatically in 24 hours.
+                    The offer resets automatically at midnight.
                 </p>
             </div>
             <div class="flex gap-3">
@@ -392,7 +392,6 @@
         // --- Clés de stockage LocalStorage ---
         const USED_PROMOS_KEY = 'shadowplug_used_promos';
         const SESSION_KEY = 'shadowplug_session';
-        const ONE_DAY_MS = 24 * 60 * 60 * 1000; // Reset quotidien (24 heures)
 
         let activeCategory = 'freefire';
         let selectedProduct = null;
@@ -402,23 +401,30 @@
         let isLoginMode = false;
         let pendingCheckoutParams = null;
 
-        // --- Système intelligent de réinitialisation quotidienne des offres ---
+        // --- Système intelligent de réinitialisation quotidienne à minuit ---
         function getActiveUsedPromos() {
             try {
                 const data = localStorage.getItem(USED_PROMOS_KEY);
                 if (!data) return {};
                 
                 const promos = JSON.parse(data);
-                const now = Date.now();
+                const now = new Date();
                 const activePromos = {};
                 let hasChanged = false;
 
-                // Ne garder que les offres utilisées il y a moins de 24h
+                // On ne garde l'offre bloquée que si elle a été achetée AUJOURD'HUI
                 for (const [productId, usedTime] of Object.entries(promos)) {
-                    if (now - usedTime < ONE_DAY_MS) {
+                    const usedDate = new Date(usedTime);
+                    
+                    // Vérifier si c'est strictement le même jour calendaire (Même Année, Mois, Jour)
+                    const isSameCalendarDay = now.getFullYear() === usedDate.getFullYear() &&
+                                              now.getMonth() === usedDate.getMonth() &&
+                                              now.getDate() === usedDate.getDate();
+
+                    if (isSameCalendarDay) {
                         activePromos[productId] = usedTime;
                     } else {
-                        hasChanged = true; // Offre expirée, donc réactivée !
+                        hasChanged = true; // Offre expirée car on a changé de jour ! Elle est réactivée.
                     }
                 }
 
@@ -861,7 +867,7 @@
             confirmBtn.onclick = async () => {
                 closeConfirmModal();
                 
-                // 1. Sauvegarde locale : marquer uniquement cet article précis comme utilisé à l'instant T
+                // 1. Sauvegarde locale : marquer uniquement cet article précis comme utilisé au jour d'aujourd'hui
                 const usedPromos = getActiveUsedPromos();
                 usedPromos[selectedProduct.id] = Date.now();
                 localStorage.setItem(USED_PROMOS_KEY, JSON.stringify(usedPromos));

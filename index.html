@@ -226,7 +226,7 @@
                         </div>
                     </div>
                     
-                    <button id="desktop-pay-btn" disabled
+                    <button id="desktop-pay-btn" disabled onclick="initiateCheckout()"
                         class="w-full bg-white/5 text-gray-500 font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all duration-300 cursor-not-allowed border border-white/5">
                         <i class="fa-solid fa-lock"></i>
                         Select a Package
@@ -246,7 +246,7 @@
             </div>
             
             <!-- Déclencheur de l'action d'achat mobile -->
-            <button id="mobile-pay-btn" disabled
+            <button id="mobile-pay-btn" disabled onclick="initiateCheckout()"
                 class="flex-1 bg-white/5 text-gray-500 font-bold py-3.5 px-6 rounded-xl transition-all duration-300 cursor-not-allowed flex items-center justify-center gap-2 border border-white/5">
                 Pay Now
             </button>
@@ -288,9 +288,67 @@
                 <button onclick="closeConfirmModal()" class="flex-1 bg-white/5 hover:bg-white/10 text-gray-400 font-bold py-3 rounded-xl transition-colors border border-white/5 text-sm">
                     Cancel
                 </button>
-                <button id="confirm-pay-action-btn" class="flex-1 bg-shadowRed hover:bg-shadowRedHover text-white font-bold py-3 rounded-xl transition-colors border border-transparent shadow-[0_0_15px_rgba(229,9,20,0.3)] text-sm">
+                <button onclick="executePromoCheckout()" id="confirm-pay-action-btn" class="flex-1 bg-shadowRed hover:bg-shadowRedHover text-white font-bold py-3 rounded-xl transition-colors border border-transparent shadow-[0_0_15px_rgba(229,9,20,0.3)] text-sm">
                     Confirm & Pay
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL D'AUTHENTIFICATION (Création de compte / Connexion) -->
+    <div id="auth-modal" class="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 backdrop-blur-md opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="bg-shadowCard border border-white/10 rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl relative transform scale-95 transition-transform duration-300" id="auth-modal-content">
+            
+            <!-- Bouton fermer -->
+            <button onclick="closeAuthModal()" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center text-gray-500 hover:text-white bg-white/5 hover:bg-white/10 rounded-full transition-colors">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            
+            <!-- En-tête -->
+            <div class="text-center mb-8 mt-2">
+                <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-white/5 text-white mb-4 border border-white/10">
+                    <i class="fa-solid fa-user-shield text-xl"></i>
+                </div>
+                <h2 class="text-2xl font-black text-white uppercase tracking-wide mb-1" id="auth-title">Create Account</h2>
+                <p class="text-gray-400 text-sm" id="auth-subtitle">Secure your purchase & track orders.</p>
+            </div>
+
+            <!-- Formulaire -->
+            <form id="auth-form" onsubmit="handleAuthSubmit(event)" class="space-y-5">
+                <div>
+                    <label class="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1.5 ml-1">Email Address</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-zinc-500">
+                            <i class="fa-solid fa-envelope"></i>
+                        </div>
+                        <input type="email" id="auth-email" required class="w-full bg-[#0d0d12] border border-white/10 rounded-xl pl-11 pr-4 py-3.5 text-white placeholder-zinc-600 focus:outline-none focus:border-shadowRed focus:ring-1 focus:ring-shadowRed transition-all" placeholder="you@example.com">
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1.5 ml-1">Password</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-zinc-500">
+                            <i class="fa-solid fa-lock"></i>
+                        </div>
+                        <input type="password" id="auth-password" required minlength="6" class="w-full bg-[#0d0d12] border border-white/10 rounded-xl pl-11 pr-4 py-3.5 text-white placeholder-zinc-600 focus:outline-none focus:border-shadowRed focus:ring-1 focus:ring-shadowRed transition-all" placeholder="••••••••">
+                    </div>
+                </div>
+                
+                <!-- Zone d'erreur -->
+                <div id="auth-error" class="hidden text-shadowRed text-xs font-semibold text-center bg-red-950/30 p-3 rounded-lg border border-shadowRed/20"></div>
+
+                <button type="submit" id="auth-submit-btn" class="w-full bg-shadowRed hover:bg-shadowRedHover text-white font-bold py-4 rounded-xl transition-all shadow-[0_0_20px_rgba(229,9,20,0.3)] mt-2 flex items-center justify-center gap-2">
+                    <span id="auth-submit-text">Continue to Payment</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </form>
+
+            <!-- Bascule Connexion/Inscription -->
+            <div class="mt-6 text-center border-t border-white/5 pt-6">
+                <p class="text-zinc-500 text-sm" id="auth-toggle-text">
+                    Already have an account? <span class="text-white font-semibold hover:text-shadowRed cursor-pointer transition-colors" onclick="toggleAuthMode()">Sign In</span>
+                </p>
             </div>
         </div>
     </div>
@@ -357,6 +415,11 @@
         let selectedProduct = null;
         let deviceId = null;
 
+        // Nouveaux états pour l'authentification
+        let currentUser = null;
+        let isLoginMode = false;
+        let pendingCheckoutParams = null; // Sauvegarde le paiement en cours pendant l'auth
+
         // Évaluation de l'appareil via FingerprintJS + Supabase
         async function initDeviceTracking() {
             if (!supabaseClient) {
@@ -398,7 +461,7 @@
                 price: 1.05,             // Prix régulier sur la boutique
                 originalPrice: 1.39,     // Prix standard d'origine
                 discountLabel: '-€0.34',  // Réduction standard
-                icon: '<img src="https://i.imgur.com/Cu4bom0.png" class="w-full h-full object-contain p-1 rounded-lg" alt="110 Diamonds" draggable="false" onerror="this.onerror=null; this.src=\'https://placehold.co/300x300/121215/ffffff?text=110+Diamonds\';\">',
+                icon: '<img src="https://i.imgur.com/Cu4bom0.png" class="w-full h-full object-contain p-1 rounded-lg" alt="110 Diamonds" draggable="false" onerror="this.onerror=null; this.src=\'https://placehold.co/300x300/121215/ffffff?text=110+Diamonds\';">',
                 isSpecialOffer: true,    // Déclenche la logique d'offre de bienvenue (Local Storage)
                 offerPrice: 0.99,        // Prix spécial de l'offre
                 offerDiscountLabel: 'WELCOME PROMO',
@@ -412,7 +475,7 @@
                 price: 1.99,
                 originalPrice: 2.59,
                 discountLabel: '-€0.60',
-                icon: '<img src="https://i.imgur.com/Ixryv9v.png" class="w-full h-full object-contain p-1 rounded-lg" alt="231 Diamonds" draggable="false" onerror="this.onerror=null; this.src=\'https://placehold.co/300x300/121215/ffffff?text=231+Diamonds\';\">',
+                icon: '<img src="https://i.imgur.com/Ixryv9v.png" class="w-full h-full object-contain p-1 rounded-lg" alt="231 Diamonds" draggable="false" onerror="this.onerror=null; this.src=\'https://placehold.co/300x300/121215/ffffff?text=231+Diamonds\';">',
                 isSpecialOffer: false,
                 paymentLink: 'https://buy.stripe.com/eVq4gy0ERdRC9pM6Sn3F601'
             },
@@ -423,7 +486,7 @@
                 price: 5.01,
                 originalPrice: 6.89,
                 discountLabel: '-€1.88',
-                icon: '<img src="https://i.imgur.com/3J8SN2w.png" class="w-full h-full object-contain p-1 rounded-lg" alt="583 Diamonds" draggable="false" onerror="this.onerror=null; this.src=\'https://placehold.co/300x300/121215/ffffff?text=583+Diamonds\';\">',
+                icon: '<img src="https://i.imgur.com/3J8SN2w.png" class="w-full h-full object-contain p-1 rounded-lg" alt="583 Diamonds" draggable="false" onerror="this.onerror=null; this.src=\'https://placehold.co/300x300/121215/ffffff?text=583+Diamonds\';">',
                 isSpecialOffer: false,
                 paymentLink: 'https://buy.stripe.com/6oU00i87j14Q7hE1y33F602'
             },
@@ -434,7 +497,7 @@
                 price: 10.00,
                 originalPrice: 13.99,
                 discountLabel: '-€3.99',
-                icon: '<img src="https://i.imgur.com/goRONfN.png" class="w-full h-full object-contain p-1 rounded-lg" alt="1188 Diamonds" draggable="false" onerror="this.onerror=null; this.src=\'https://placehold.co/300x300/121215/ffffff?text=1188+Diamonds\';\">',
+                icon: '<img src="https://i.imgur.com/goRONfN.png" class="w-full h-full object-contain p-1 rounded-lg" alt="1188 Diamonds" draggable="false" onerror="this.onerror=null; this.src=\'https://placehold.co/300x300/121215/ffffff?text=1188+Diamonds\';">',
                 isSpecialOffer: false,
                 paymentLink: 'https://buy.stripe.com/4gMeVc0ERdRC1Xk5Oj3F603'
             },
@@ -445,7 +508,7 @@
                 price: 17.89,
                 originalPrice: 23.99,
                 discountLabel: '-€6.10',
-                icon: '<img src="https://i.imgur.com/eznAmJH.png" class="w-full h-full object-contain p-1 rounded-lg" alt="2180 Diamonds" draggable="false" onerror="this.onerror=null; this.src=\'https://placehold.co/300x300/121215/ffffff?text=2180+Diamonds\';\">',
+                icon: '<img src="https://i.imgur.com/eznAmJH.png" class="w-full h-full object-contain p-1 rounded-lg" alt="2180 Diamonds" draggable="false" onerror="this.onerror=null; this.src=\'https://placehold.co/300x300/121215/ffffff?text=2180+Diamonds\';">',
                 isSpecialOffer: false,
                 paymentLink: 'https://buy.stripe.com/aFaeVccnzeVG6dA7Wr3F60h'
             },
@@ -456,7 +519,7 @@
                 price: 20.01,
                 originalPrice: 26.99,
                 discountLabel: '-€6.98',
-                icon: '<img src="https://i.imgur.com/i0nBmQV.png" class="w-full h-full object-contain p-1 rounded-lg" alt="2420 Diamonds" draggable="false" onerror="this.onerror=null; this.src=\'https://placehold.co/300x300/121215/ffffff?text=2420+Diamonds\';\">',
+                icon: '<img src="https://i.imgur.com/i0nBmQV.png" class="w-full h-full object-contain p-1 rounded-lg" alt="2420 Diamonds" draggable="false" onerror="this.onerror=null; this.src=\'https://placehold.co/300x300/121215/ffffff?text=2420+Diamonds\';">',
                 isSpecialOffer: false,
                 paymentLink: 'https://buy.stripe.com/eVq9AS0ER28UatQ6Sn3F604'
             },
@@ -467,7 +530,7 @@
                 price: 43.99,             // Prix régulier standard
                 originalPrice: 59.99,     // Prix standard d'origine
                 discountLabel: '-€16.00',  // Réduction standard
-                icon: '<img src="https://i.imgur.com/9VJpQEc.png" class="w-full h-full object-contain p-1 rounded-lg" alt="5423 Diamonds" draggable="false" onerror="this.onerror=null; this.src=\'https://placehold.co/300x300/121215/ffffff?text=5423+Diamonds\';\">',
+                icon: '<img src="https://i.imgur.com/9VJpQEc.png" class="w-full h-full object-contain p-1 rounded-lg" alt="5423 Diamonds" draggable="false" onerror="this.onerror=null; this.src=\'https://placehold.co/300x300/121215/ffffff?text=5423+Diamonds\';">',
                 isSpecialOffer: true,    // Offre promotionnelle soumise au reset local
                 offerPrice: 41.59,
                 offerDiscountLabel: 'WELCOME PROMO',
@@ -481,7 +544,7 @@
                 price: 54.99,
                 originalPrice: 66.99,
                 discountLabel: '-€12.00',
-                icon: '<img src="https://i.imgur.com/eGvEvYi.png" class="w-full h-full object-contain p-1 rounded-lg" alt="6160 Diamonds" draggable="false" onerror="this.onerror=null; this.src=\'https://placehold.co/300x300/121215/ffffff?text=6160+Diamonds\';\">',
+                icon: '<img src="https://i.imgur.com/eGvEvYi.png" class="w-full h-full object-contain p-1 rounded-lg" alt="6160 Diamonds" draggable="false" onerror="this.onerror=null; this.src=\'https://placehold.co/300x300/121215/ffffff?text=6160+Diamonds\';">',
                 isSpecialOffer: true,    // Offre promotionnelle soumise au reset local
                 offerPrice: 49.99,
                 offerDiscountLabel: 'WELCOME PROMO',
@@ -496,7 +559,7 @@
                 price: 59.99,             // Prix régulier standard
                 originalPrice: 78.99,     // Prix standard d'origine
                 discountLabel: '-€19.00',  // Réduction standard
-                icon: '<img src="https://i.imgur.com/JBNL2iI.png" class="w-full h-full object-contain p-1 rounded-lg" alt="7290 Diamonds" draggable="false" onerror="this.onerror=null; this.src=\'https://placehold.co/300x300/121215/ffffff?text=7290+Diamonds\';\">',
+                icon: '<img src="https://i.imgur.com/JBNL2iI.png" class="w-full h-full object-contain p-1 rounded-lg" alt="7290 Diamonds" draggable="false" onerror="this.onerror=null; this.src=\'https://placehold.co/300x300/121215/ffffff?text=7290+Diamonds\';">',
                 isSpecialOffer: true,    // Offre promotionnelle soumise au reset local
                 offerPrice: 54.99,
                 offerDiscountLabel: 'WELCOME PROMO',
@@ -510,7 +573,7 @@
                 price: 8.79,
                 originalPrice: 10.99,
                 discountLabel: '-€2.20',
-                icon: '<div class="relative"><i class="fa-solid fa-box-open text-zinc-600 text-4xl"></i><i class="fa-regular fa-gem text-blue-400 text-2xl absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" style="filter: drop-shadow(0 0 10px rgba(96,165,250,0.8));"></i></div>',
+                icon: '<div class="relative w-full h-full flex items-center justify-center"><i class="fa-solid fa-box-open text-zinc-600 text-4xl"></i><i class="fa-regular fa-gem text-blue-400 text-2xl absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" style="filter: drop-shadow(0 0 10px rgba(96,165,250,0.8));"></i></div>',
                 isSpecialOffer: false,
                 paymentLink: 'https://buy.stripe.com/test_normal_ff_1060'
             },
@@ -521,7 +584,7 @@
                 price: 44.61,
                 originalPrice: 59.99,
                 discountLabel: '-€15.38',
-                icon: '<div class="relative"><i class="fa-solid fa-vault text-amber-600 text-5xl"></i><div class="absolute inset-0 flex items-center justify-center"><i class="fa-solid fa-gem text-blue-400 text-2xl" style="filter: drop-shadow(0 0 20px rgba(96,165,250,1));"></i></div></div>',
+                icon: '<div class="relative w-full h-full flex items-center justify-center"><i class="fa-solid fa-vault text-amber-600 text-5xl"></i><div class="absolute inset-0 flex items-center justify-center"><i class="fa-solid fa-gem text-blue-400 text-2xl" style="filter: drop-shadow(0 0 20px rgba(96,165,250,1));"></i></div></div>',
                 isSpecialOffer: false,
                 paymentLink: 'https://buy.stripe.com/test_normal_ff_5600'
             },
@@ -535,7 +598,7 @@
                 price: 2.99,
                 originalPrice: 17.99,
                 discountLabel: '-83%',
-                icon: '<div class="relative"><i class="fa-solid fa-tv text-zinc-700 text-5xl"></i><div class="absolute inset-0 flex items-center justify-center text-xs font-black text-shadowRed">4K</div></div>',
+                icon: '<div class="relative w-full h-full flex items-center justify-center"><i class="fa-solid fa-tv text-zinc-700 text-5xl"></i><div class="absolute inset-0 flex items-center justify-center text-xs font-black text-shadowRed">4K</div></div>',
                 isSpecialOffer: false,
                 paymentLink: 'https://buy.stripe.com/test_nf_1m'
             },
@@ -548,7 +611,7 @@
                 originalPrice: 53.97,
                 discountLabel: '-85%',
                 isBestValue: true,
-                icon: '<div class="relative"><i class="fa-solid fa-display text-zinc-600 text-5xl"></i><div class="absolute inset-0 flex items-center justify-center text-xs font-black text-shadowRed" style="filter: drop-shadow(0 0 8px rgba(229,9,20,0.6));">UHD</div></div>',
+                icon: '<div class="relative w-full h-full flex items-center justify-center"><i class="fa-solid fa-display text-zinc-600 text-5xl"></i><div class="absolute inset-0 flex items-center justify-center text-xs font-black text-shadowRed" style="filter: drop-shadow(0 0 8px rgba(229,9,20,0.6));">UHD</div></div>',
                 isSpecialOffer: false,
                 paymentLink: 'https://buy.stripe.com/test_nf_3m'
             },
@@ -560,7 +623,7 @@
                 price: 19.99,
                 originalPrice: 25.00,
                 discountLabel: '-20%',
-                icon: '<i class="fa-solid fa-credit-card text-shadowRed text-4xl" style="filter: drop-shadow(0 0 12px rgba(229,9,20,0.5));"></i>',
+                icon: '<div class="w-full h-full flex items-center justify-center"><i class="fa-solid fa-credit-card text-shadowRed text-4xl" style="filter: drop-shadow(0 0 12px rgba(229,9,20,0.5));"></i></div>',
                 isSpecialOffer: false,
                 paymentLink: 'https://buy.stripe.com/test_nf_card25'
             }
@@ -751,7 +814,7 @@
             desktopPayBtn.disabled = false;
             desktopPayBtn.className = "w-full bg-shadowRed hover:bg-shadowRedHover text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all duration-300 shadow-[0_0_20px_rgba(229,9,20,0.4)] border border-transparent cursor-pointer";
             desktopPayBtn.innerHTML = `Checkout Securely <i class="fa-solid fa-arrow-right ml-1"></i>`;
-            desktopPayBtn.onclick = () => dispatchPayment(activePaymentLink, isOfferActive);
+            desktopPayBtn.onclick = () => initiateCheckout();
 
             // Mise à jour de la barre mobile
             mobilePriceContainer.innerHTML = `
@@ -766,7 +829,7 @@
             mobilePayBtn.disabled = false;
             mobilePayBtn.className = "flex-1 bg-shadowRed hover:bg-shadowRedHover text-white font-bold py-3.5 px-6 rounded-xl transition-all duration-300 shadow-[0_0_20px_rgba(229,9,20,0.4)] flex items-center justify-center gap-2 border border-transparent cursor-pointer";
             mobilePayBtn.innerHTML = `Pay <i class="fa-solid fa-arrow-right text-xs"></i>`;
-            mobilePayBtn.onclick = () => dispatchPayment(activePaymentLink, isOfferActive);
+            mobilePayBtn.onclick = () => initiateCheckout();
         }
 
         // Affiche la fenêtre pop-up d'avertissement pour les offres spéciales
@@ -865,11 +928,125 @@
             modalContent.classList.add('scale-95');
         }
 
+
+        // Déclenche le processus de paiement global (et force l'authentification si nécessaire)
+        function initiateCheckout() {
+            if (!selectedProduct) return;
+            const isOfferActive = selectedProduct.isSpecialOffer && isNewCustomerOfferAvailable;
+            const activePaymentLink = isOfferActive ? selectedProduct.paymentLinkOffer : selectedProduct.paymentLink;
+            
+            if (!currentUser) {
+                // Sauvegarde le contexte de paiement pour le déclencher post-login
+                pendingCheckoutParams = { url: activePaymentLink, isOfferUsed: isOfferActive };
+                openAuthModal();
+                return;
+            }
+            
+            dispatchPayment(activePaymentLink, isOfferActive);
+        }
+
+        function openAuthModal() {
+            const modal = document.getElementById('auth-modal');
+            const modalContent = document.getElementById('auth-modal-content');
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modalContent.classList.remove('scale-95');
+            modalContent.classList.add('scale-100');
+        }
+
+        function closeAuthModal() {
+            const modal = document.getElementById('auth-modal');
+            const modalContent = document.getElementById('auth-modal-content');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            modalContent.classList.remove('scale-100');
+            modalContent.classList.add('scale-95');
+        }
+
+        function toggleAuthMode() {
+            isLoginMode = !isLoginMode;
+            document.getElementById('auth-title').innerText = isLoginMode ? 'Sign In' : 'Create Account';
+            document.getElementById('auth-subtitle').innerText = isLoginMode ? 'Welcome back to ShadowPlug.' : 'Secure your purchase & track orders.';
+            document.getElementById('auth-submit-text').innerText = isLoginMode ? 'Sign In & Continue' : 'Continue to Payment';
+            document.getElementById('auth-toggle-text').innerHTML = isLoginMode 
+                ? 'Need an account? <span class="text-white font-semibold hover:text-shadowRed cursor-pointer transition-colors" onclick="toggleAuthMode()">Sign Up</span>'
+                : 'Already have an account? <span class="text-white font-semibold hover:text-shadowRed cursor-pointer transition-colors" onclick="toggleAuthMode()">Sign In</span>';
+            document.getElementById('auth-error').classList.add('hidden');
+        }
+
+        async function handleAuthSubmit(event) {
+            event.preventDefault();
+            const email = document.getElementById('auth-email').value;
+            const password = document.getElementById('auth-password').value;
+            const errorDiv = document.getElementById('auth-error');
+            const submitBtn = document.getElementById('auth-submit-btn');
+            
+            errorDiv.classList.add('hidden');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Processing...';
+
+            // Mode hors-ligne / simulation si Supabase n'est pas configuré
+            if (!supabaseClient) {
+                setTimeout(() => {
+                    currentUser = { email };
+                    closeAuthModal();
+                    if (pendingCheckoutParams) {
+                        dispatchPayment(pendingCheckoutParams.url, pendingCheckoutParams.isOfferUsed);
+                    }
+                    resetAuthBtn();
+                }, 1000);
+                return;
+            }
+
+            try {
+                let error = null;
+                if (isLoginMode) {
+                    const res = await supabaseClient.auth.signInWithPassword({ email, password });
+                    error = res.error;
+                    if (!error && res.data.session) currentUser = res.data.session.user;
+                } else {
+                    const res = await supabaseClient.auth.signUp({ email, password });
+                    error = res.error;
+                    if (!error && res.data.session) currentUser = res.data.session.user;
+                }
+
+                if (error) throw error;
+
+                closeAuthModal();
+                if (pendingCheckoutParams) {
+                    dispatchPayment(pendingCheckoutParams.url, pendingCheckoutParams.isOfferUsed);
+                }
+            } catch (err) {
+                errorDiv.innerText = err.message || "Authentication failed. Please check your credentials.";
+                errorDiv.classList.remove('hidden');
+            } finally {
+                resetAuthBtn();
+            }
+            
+            function resetAuthBtn() {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<span id="auth-submit-text">' + (isLoginMode ? 'Sign In & Continue' : 'Continue to Payment') + '</span> <i class="fa-solid fa-arrow-right"></i>';
+            }
+        }
+        
+        // Fallback global pour éviter une erreur si le DOM s'éxécute trop vite
+        function executePromoCheckout() {
+            console.log("Waiting for checkout initialization...");
+        }
+
         // Initialisation du catalogue au chargement du DOM
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Vérifier si une session utilisateur existe déjà en arrière-plan
+            if (supabaseClient) {
+                try {
+                    const { data } = await supabaseClient.auth.getSession();
+                    if (data?.session) {
+                        currentUser = data.session.user;
+                    }
+                } catch(e) { console.error("Auth init error:", e); }
+            }
+            
             initDeviceTracking();
             renderProducts();
         });
     </script>
 </body>
-</html>  
+</html> 

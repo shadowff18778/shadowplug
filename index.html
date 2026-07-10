@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ShadowPlug - Premium Store</title>
-    <!-- Tailwind CSS for styling -->
+    <!-- Tailwind CSS pour le style -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts: Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <!-- FontAwesome for icons -->
+    <!-- FontAwesome pour les icônes -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <script>
@@ -21,7 +21,7 @@
                     colors: {
                         shadowDark: '#08080a',
                         shadowCard: '#121215',
-                        shadowRed: '#e50914', // Aggressive Netflix/Gaming Red
+                        shadowRed: '#e50914', // Rouge Gaming agressif (style Netflix)
                         shadowRedHover: '#b20710',
                         shadowRedGlow: 'rgba(229, 9, 20, 0.4)',
                     }
@@ -30,26 +30,26 @@
         }
     </script>
     <style>
-        /* Base styles and anti-copy protections */
+        /* Styles de base et protections anti-copie */
         body {
             background-color: #08080a;
             color: #ffffff;
-            /* Prevent text selection */
+            /* Empêche la sélection de texte */
             -webkit-user-select: none;
             -ms-user-select: none;
             user-select: none;
             overflow-x: hidden;
-            /* Hide scrollbar for IE, Edge and Firefox */
-            -ms-overflow-style: none;  /* IE and Edge */
+            /* Masque la barre de défilement pour IE, Edge et Firefox */
+            -ms-overflow-style: none;  /* IE et Edge */
             scrollbar-width: none;  /* Firefox */
         }
 
-        /* Hide scrollbar for Chrome, Safari and Opera */
+        /* Masque la barre de défilement pour Chrome, Safari et Opera */
         ::-webkit-scrollbar {
             display: none;
         }
 
-        /* Animations */
+        /* Animations d'apparition */
         .fade-in {
             animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
@@ -58,7 +58,7 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Product Card styling */
+        /* Style des cartes de produits */
         .product-card {
             transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
             border: 1px solid #1f1f24;
@@ -90,13 +90,13 @@
             opacity: 1;
         }
         
-        /* Selected Card state */
+        /* État de la carte sélectionnée */
         .product-card.selected {
             border-color: #e50914;
             box-shadow: 0 0 0 2px #e50914, 0 0 25px rgba(229, 9, 20, 0.25);
         }
 
-        /* Image placeholder style */
+        /* Conteneur d'image */
         .img-placeholder {
             background: linear-gradient(135deg, #16161a, #1f1f25);
             display: flex;
@@ -105,19 +105,19 @@
             position: relative;
         }
 
-        /* Disable image dragging */
+        /* Désactive le glisser-déposer des images */
         img {
             -webkit-user-drag: none;
             user-drag: none;
         }
 
-        /* Bottom Action Bar for mobile */
+        /* Barre d'action basse pour mobile */
         .bottom-bar {
             box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.7);
             border-top: 1px solid #1f1f24;
         }
 
-        /* Glow effects */
+        /* Effets de lueur rouge */
         .text-glow-red {
             text-shadow: 0 0 10px rgba(229, 9, 20, 0.6);
         }
@@ -135,15 +135,15 @@
 </head>
 <body class="font-sans antialiased bg-shadowDark flex flex-col min-h-screen pb-28 lg:pb-0" oncontextmenu="return false;">
     
-    <!-- Navigation / Header -->
+    <!-- En-tête / Navigation -->
     <header class="sticky top-0 z-50 bg-shadowDark/95 backdrop-blur-md border-b border-white/5 px-4">
         <div class="max-w-6xl mx-auto h-16 flex items-center justify-between">
-            <!-- Logo Title -->
+            <!-- Titre du Logo -->
             <h1 class="text-2xl font-black tracking-wider uppercase flex items-center gap-1.5">
                 <span class="text-white">SHADOW</span><span class="text-shadowRed text-glow-red">PLUG</span>
             </h1>
             
-            <!-- Status Badge -->
+            <!-- Badge de statut en ligne -->
             <div class="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full text-xs font-semibold text-emerald-400">
                 <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
                 ONLINE
@@ -151,13 +151,13 @@
         </div>
     </header>
 
-    <!-- Main Content Grid -->
+    <!-- Grille principale de contenu -->
     <main class="flex-grow max-w-6xl mx-auto w-full px-4 py-6 flex flex-col lg:flex-row gap-8">
         
-        <!-- Left Column: Categories and Products Grid -->
+        <!-- Colonne Gauche: Catégories et grille de produits -->
         <div class="w-full lg:w-2/3 flex flex-col gap-6 fade-in">
             
-            <!-- Delivery Alert Banner -->
+            <!-- Bannière d'alerte de livraison sécurisée -->
             <div class="bg-gradient-to-r from-shadowCard to-red-950/20 border border-white/5 rounded-2xl p-4 flex items-center gap-4 shadow-xl">
                 <div class="w-12 h-12 rounded-xl bg-shadowRed/10 border border-shadowRed/20 flex items-center justify-center text-shadowRed text-xl shrink-0">
                     <i class="fa-solid fa-shield-halved"></i>
@@ -168,7 +168,7 @@
                 </div>
             </div>
 
-            <!-- Category Switcher Tabs -->
+            <!-- Boutons de sélection de catégorie (Tabs) -->
             <div class="flex p-1 bg-shadowCard border border-white/5 rounded-xl gap-1">
                 <button onclick="switchCategory('freefire')" id="tab-freefire" class="tab-btn active flex-1 py-3 px-4 rounded-lg font-bold text-sm flex items-center justify-center gap-2">
                     <i class="fa-solid fa-fire-flame-curved"></i>
@@ -180,17 +180,17 @@
                 </button>
             </div>
 
-            <!-- Products Container -->
+            <!-- Conteneur de produits -->
             <div class="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4" id="products-container">
-                <!-- Injected programmatically by JavaScript -->
+                <!-- Injecté dynamiquement en JavaScript -->
             </div>
         </div>
 
-        <!-- Right Column: Info & Action Dashboard -->
+        <!-- Colonne Droite: Tableau de bord d'informations et d'actions -->
         <div class="w-full lg:w-1/3 fade-in" style="animation-delay: 0.1s;">
             <div class="lg:sticky lg:top-24 space-y-6">
                 
-                <!-- Guidelines & Order Info -->
+                <!-- Consignes et informations de commande -->
                 <div class="bg-shadowCard rounded-2xl p-5 border border-white/5 shadow-2xl relative overflow-hidden">
                     <div class="absolute -right-8 -top-8 w-24 h-24 bg-shadowRed/5 rounded-full blur-xl pointer-events-none"></div>
                     <h3 class="text-base font-bold mb-4 border-b border-white/5 pb-2 flex items-center gap-2">
@@ -213,7 +213,7 @@
                     </div>
                 </div>
 
-                <!-- Desktop Summary Area -->
+                <!-- Zone de récapitulatif d'achat pour PC -->
                 <div class="hidden lg:block bg-shadowCard rounded-2xl p-5 border border-white/5 shadow-2xl">
                     <div id="desktop-checkout-details" class="mb-4">
                         <div class="text-gray-500 text-sm text-center py-6">
@@ -232,16 +232,16 @@
         </div>
     </main>
 
-    <!-- Mobile Navigation Bottom Bar -->
+    <!-- Barre d'action basse pour la navigation sur Mobile -->
     <div class="lg:hidden fixed bottom-0 left-0 w-full bg-shadowCard/95 backdrop-blur-md bottom-bar z-40 p-4 transition-transform duration-300" id="mobile-bottom-bar">
         <div class="max-w-md mx-auto flex items-center justify-between gap-4">
-            <!-- Price Block -->
+            <!-- Affichage du prix pour mobile -->
             <div class="flex-1" id="mobile-price-container">
                 <div class="text-gray-500 text-xs font-medium uppercase tracking-wider">Total Amount</div>
                 <div class="text-xl font-bold text-white">-- €</div>
             </div>
             
-            <!-- Checkout Action Trigger -->
+            <!-- Déclencheur de l'action d'achat mobile -->
             <button id="mobile-pay-btn" disabled
                 class="flex-1 bg-white/5 text-gray-500 font-bold py-3.5 px-6 rounded-xl transition-all duration-300 cursor-not-allowed flex items-center justify-center gap-2 border border-white/5">
                 Pay Now
@@ -249,7 +249,7 @@
         </div>
     </div>
 
-    <!-- Message Modal for errors/alerts (Custom UI) -->
+    <!-- Modal d'affichage des alertes et notices de base (UI personnalisée) -->
     <div id="message-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md opacity-0 pointer-events-none transition-opacity duration-300">
         <div class="bg-shadowCard border border-white/10 rounded-2xl p-6 max-w-sm w-full mx-4 shadow-2xl transform scale-95 transition-transform duration-300" id="message-modal-content">
             <div class="text-center mb-6">
@@ -265,7 +265,7 @@
         </div>
     </div>
 
-    <!-- Interactive Confirm Modal for Promos -->
+    <!-- Modal de confirmation interactif pour les offres promotionnelles -->
     <div id="confirm-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md opacity-0 pointer-events-none transition-opacity duration-300">
         <div class="bg-shadowCard border border-shadowRed/30 rounded-2xl p-6 max-w-sm w-full mx-4 shadow-[0_0_50px_rgba(229,9,20,0.15)] transform scale-95 transition-transform duration-300" id="confirm-modal-content">
             <div class="text-center mb-6">
@@ -292,17 +292,17 @@
     </div>
 
     <script>
-        // --- Security Protocols (Anti-Inspect & Anti-Copy) ---
-        // Prevent default context menus
+        // --- Protocoles de sécurité (Anti-Inspect & Anti-Copie) ---
+        // Désactive le menu clic droit par défaut
         document.addEventListener('contextmenu', event => event.preventDefault());
         
-        // Trap specific debugger keyboard commands
+        // Bloque l'accès aux touches développeurs du clavier
         document.addEventListener('keydown', function(e) {
-            if (e.keyCode === 123) { // F12 Key
+            if (e.keyCode === 123) { // Touche F12
                 e.preventDefault();
                 return false;
             }
-            if (e.ctrlKey && e.shiftKey && e.keyCode === 73) { // Inspect Mode [Ctrl+Shift+I]
+            if (e.ctrlKey && e.shiftKey && e.keyCode === 73) { // Inspecter l'élément [Ctrl+Shift+I]
                 e.preventDefault();
                 return false;
             }
@@ -310,29 +310,29 @@
                 e.preventDefault();
                 return false;
             }
-            if (e.ctrlKey && e.keyCode === 85) { // Source [Ctrl+U]
+            if (e.ctrlKey && e.keyCode === 85) { // Voir le code source [Ctrl+U]
                 e.preventDefault();
                 return false;
             }
-            if (e.ctrlKey && e.keyCode === 67) { // Copy [Ctrl+C]
+            if (e.ctrlKey && e.keyCode === 67) { // Copier [Ctrl+C]
                 e.preventDefault();
                 return false;
             }
         });
 
-        // --- Store State Logic ---
+        // --- Logique d'état de la boutique ---
         const NEW_CUSTOMER_OFFER_KEY = 'shadowplug_new_customer_used_time';
         
-        // Dynamic offer evaluation with monthly reset logic (30 days limit)
+        // Évaluation dynamique de la validité de l'offre avec reset mensuel (30 jours)
         function checkOfferAvailability() {
             const offerUsedTime = localStorage.getItem(NEW_CUSTOMER_OFFER_KEY);
             if (!offerUsedTime) return true;
 
-            const oneMonthMs = 30 * 24 * 60 * 60 * 1000; // 30 Days
+            const oneMonthMs = 30 * 24 * 60 * 60 * 1000; // 30 Jours
             const timePassed = Date.now() - parseInt(offerUsedTime, 10);
             
             if (timePassed >= oneMonthMs) {
-                // Time window exceeded, reset and offer is available again
+                // Temps écoulé, on nettoie le cache pour rendre l'offre à nouveau disponible
                 localStorage.removeItem(NEW_CUSTOMER_OFFER_KEY);
                 return true;
             }
@@ -343,22 +343,22 @@
         let activeCategory = 'freefire';
         let selectedProduct = null;
 
-        // --- Catalog Definition ---
+        // --- Catalogue des produits ---
         const products = [
-            // --- CATEGORY: FREE FIRE ---
+            // --- CATÉGORIE: FREE FIRE ---
             {
                 id: 'ff_110',
                 category: 'freefire',
                 title: '110 Diamonds',
-                price: 1.05,             // Regular price on the site
-                originalPrice: 1.39,     // Original standard store price
-                discountLabel: '-€0.34',  // Regular discount representation
+                price: 1.05,             // Prix régulier sur la boutique
+                originalPrice: 1.39,     // Prix standard d'origine
+                discountLabel: '-€0.34',  // Réduction standard
                 icon: '<img src="https://i.imgur.com/Cu4bom0.png" class="w-full h-full object-contain p-1 rounded-lg" alt="110 Diamonds" draggable="false" onerror="this.onerror=null; this.src=\'https://placehold.co/300x300/121215/ffffff?text=110+Diamonds\';\">',
-                isSpecialOffer: true,    // Triggers New Customer / LocalStorage logic
-                offerPrice: 0.99,        // Specific Offer price
+                isSpecialOffer: true,    // Déclenche la logique d'offre de bienvenue (Local Storage)
+                offerPrice: 0.99,        // Prix spécial de l'offre
                 offerDiscountLabel: 'WELCOME PROMO',
-                paymentLinkOffer: 'https://buy.stripe.com/6oUcN473faFqdG25Oj3F606', // Promo Link
-                paymentLink: 'https://buy.stripe.com/28EdR85Zb8xibxU7Wr3F600'      // Standard Link after promo
+                paymentLinkOffer: 'https://buy.stripe.com/6oUcN473faFqdG25Oj3F606', // Lien Stripe spécial promo
+                paymentLink: 'https://buy.stripe.com/28EdR85Zb8xibxU7Wr3F600'      // Lien Stripe régulier standard
             },
             {
                 id: 'ff_231',
@@ -413,8 +413,19 @@
                 discountLabel: '-€6.98',
                 icon: '<img src="https://i.imgur.com/i0nBmQV.png" class="w-full h-full object-contain p-1 rounded-lg" alt="2420 Diamonds" draggable="false" onerror="this.onerror=null; this.src=\'https://placehold.co/300x300/121215/ffffff?text=2420+Diamonds\';\">',
                 isSpecialOffer: false,
-                isBestValue: true,
                 paymentLink: 'https://buy.stripe.com/eVq9AS0ER28UatQ6Sn3F604'
+            },
+            {
+                id: 'ff_5423',
+                category: 'freefire',
+                title: '5423 Diamonds',
+                price: 41.59,
+                originalPrice: 59.99,
+                discountLabel: '-€18.40',
+                icon: '<img src="https://i.imgur.com/9VJpQEc.png" class="w-full h-full object-contain p-1 rounded-lg" alt="5423 Diamonds" draggable="false" onerror="this.onerror=null; this.src=\'https://placehold.co/300x300/121215/ffffff?text=5423+Diamonds\';\">',
+                isSpecialOffer: false,
+                isBestValue: true,
+                paymentLink: 'https://buy.stripe.com/14AeVc73feVG9pM2C73F608'
             },
             {
                 id: 'ff_1060',
@@ -439,7 +450,7 @@
                 paymentLink: 'https://buy.stripe.com/test_normal_ff_5600'
             },
 
-            // --- CATEGORY: NETFLIX ---
+            // --- CATÉGORIE: NETFLIX ---
             {
                 id: 'nf_1m_premium',
                 category: 'netflix',
@@ -479,19 +490,19 @@
             }
         ];
 
-        // --- Functions ---
+        // --- Fonctions d'exécution ---
 
-        // Currency Formatting
+        // Formatage des prix en monnaie locale (Euro)
         const formatMoney = (amount) => {
             return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'EUR' }).format(amount);
         };
 
-        // Switch Store View Categories
+        // Permet de basculer d'une catégorie de boutique à une autre
         function switchCategory(category) {
             activeCategory = category;
-            selectedProduct = null; // Reset selection
+            selectedProduct = null; // Réinitialise la sélection
 
-            // Reset Tab UI
+            // Met à jour l'état visuel des onglets (Tabs)
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.classList.remove('active', 'text-white');
                 btn.classList.add('text-gray-400');
@@ -507,7 +518,7 @@
             resetCheckoutUI();
         }
 
-        // Render Cards based on Active Filter
+        // Rendu dynamique des cartes de produits
         function renderProducts() {
             const container = document.getElementById('products-container');
             container.innerHTML = '';
@@ -528,7 +539,7 @@
                     cardClass += ` border-zinc-700`;
                 }
 
-                // Dynamic Price layout rendering
+                // Génération de la mise en page dynamique pour les prix
                 let priceHtml = '';
                 let discountLabelToShow = product.discountLabel;
 
@@ -558,13 +569,13 @@
 
                 const html = `
                     <div class="${cardClass}" onclick="selectProduct('${product.id}')" id="card-${product.id}">
-                        <!-- Graphics/Asset Slot -->
+                        <!-- Emplacement de l'image -->
                         <div class="img-placeholder h-32 rounded-lg mb-3 overflow-hidden">
                             ${product.icon}
                             ${isOfferActive ? '<div class="absolute top-2 left-2 bg-black/80 px-2 py-0.5 rounded text-[10px] font-bold text-shadowRed border border-shadowRed/30">DEAL</div>' : ''}
                         </div>
                         
-                        <!-- Descriptor Details -->
+                        <!-- Détails du produit -->
                         <div class="px-2 pb-2 flex-grow flex flex-col justify-between">
                             <div>
                                 <h3 class="text-sm font-semibold text-gray-100 leading-tight">${product.title}</h3>
@@ -584,14 +595,14 @@
             });
         }
 
-        // Handle selection state shifts
+        // Gère les changements d'état lors de la sélection d'un produit
         function selectProduct(id) {
             selectedProduct = products.find(p => p.id === id);
             renderProducts();
             updateCheckoutUI();
         }
 
-        // Clear Selection state visual representations
+        // Réinitialise l'affichage de l'interface de paiement
         function resetCheckoutUI() {
             const desktopCheckoutDetails = document.getElementById('desktop-checkout-details');
             const desktopPayBtn = document.getElementById('desktop-pay-btn');
@@ -618,7 +629,7 @@
             mobilePayBtn.innerHTML = `Pay Now`;
         }
 
-        // Apply Selection State details to checkout actions
+        // Met à jour l'interface utilisateur en fonction du produit sélectionné
         function updateCheckoutUI() {
             if (!selectedProduct) return;
 
@@ -634,7 +645,7 @@
 
             const currentPrice = isOfferActive ? selectedProduct.offerPrice : selectedProduct.price;
 
-            // Update Desktop Side
+            // Mise à jour de l'affichage sur ordinateur
             let detailsHtml = `
                 <div class="flex justify-between items-center mb-2">
                     <span class="text-zinc-400 text-sm">Product Pack:</span>
@@ -660,13 +671,13 @@
 
             desktopCheckoutDetails.innerHTML = detailsHtml;
             
-            // Enable Desktop CTA
+            // Activation du bouton sur PC
             desktopPayBtn.disabled = false;
             desktopPayBtn.className = "w-full bg-shadowRed hover:bg-shadowRedHover text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all duration-300 shadow-[0_0_20px_rgba(229,9,20,0.4)] border border-transparent cursor-pointer";
             desktopPayBtn.innerHTML = `Checkout Securely <i class="fa-solid fa-arrow-right ml-1"></i>`;
             desktopPayBtn.onclick = () => dispatchPayment(activePaymentLink, isOfferActive);
 
-            // Update Mobile Bottom Bar
+            // Mise à jour de la barre mobile
             mobilePriceContainer.innerHTML = `
                 <div class="text-zinc-400 text-xs font-medium">${selectedProduct.title}</div>
                 <div class="flex items-center gap-2">
@@ -675,14 +686,14 @@
                 </div>
             `;
 
-            // Enable Mobile CTA
+            // Activation du bouton sur Mobile
             mobilePayBtn.disabled = false;
             mobilePayBtn.className = "flex-1 bg-shadowRed hover:bg-shadowRedHover text-white font-bold py-3.5 px-6 rounded-xl transition-all duration-300 shadow-[0_0_20px_rgba(229,9,20,0.4)] flex items-center justify-center gap-2 border border-transparent cursor-pointer";
             mobilePayBtn.innerHTML = `Pay <i class="fa-solid fa-arrow-right text-xs"></i>`;
             mobilePayBtn.onclick = () => dispatchPayment(activePaymentLink, isOfferActive);
         }
 
-        // Open confirm modal block
+        // Affiche la fenêtre pop-up d'avertissement pour les offres spéciales
         function openConfirmModal(paymentUrl) {
             const modal = document.getElementById('confirm-modal');
             const modalContent = document.getElementById('confirm-modal-content');
@@ -690,7 +701,7 @@
 
             confirmBtn.onclick = () => {
                 closeConfirmModal();
-                // Set consumption timestamp to secure offer status in storage (runs reset after 30 days)
+                // Enregistre l'horodatage d'utilisation pour verrouiller l'offre pendant 30 jours
                 localStorage.setItem(NEW_CUSTOMER_OFFER_KEY, Date.now().toString());
                 isNewCustomerOfferAvailable = false;
                 executeRedirect(paymentUrl);
@@ -709,7 +720,7 @@
             modalContent.classList.add('scale-95');
         }
 
-        // Secure transition & redirect sequence
+        // Séquence de transition sécurisée avec effet de chargement avant redirection
         function executeRedirect(paymentUrl) {
             const desktopPayBtn = document.getElementById('desktop-pay-btn');
             const mobilePayBtn = document.getElementById('mobile-pay-btn');
@@ -723,7 +734,7 @@
             }, 600);
         }
 
-        // Trigger safe payment dispatcher
+        // Dispatcher de paiement sécurisé
         function dispatchPayment(paymentUrl, isOfferUsed) {
             if (isOfferUsed) {
                 openConfirmModal(paymentUrl);
@@ -732,7 +743,7 @@
             }
         }
 
-        // Custom UI Modal Interface
+        // Interface modale d'alerte et de messages généraux (Custom)
         function showMessage(title, message, isSuccess = false) {
             const modal = document.getElementById('message-modal');
             const modalContent = document.getElementById('message-modal-content');
@@ -763,7 +774,7 @@
             modalContent.classList.add('scale-95');
         }
 
-        // Bootstrap on Page Mount
+        // Initialisation du catalogue au chargement du DOM
         document.addEventListener('DOMContentLoaded', () => {
             renderProducts();
         });

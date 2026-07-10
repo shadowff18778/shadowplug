@@ -419,13 +419,30 @@
                 id: 'ff_5423',
                 category: 'freefire',
                 title: '5423 Diamonds',
-                price: 41.59,
-                originalPrice: 59.99,
-                discountLabel: '-€18.40',
+                price: 43.99,             // Prix régulier standard
+                originalPrice: 59.99,     // Prix standard d'origine
+                discountLabel: '-€16.00',  // Réduction standard
                 icon: '<img src="https://i.imgur.com/9VJpQEc.png" class="w-full h-full object-contain p-1 rounded-lg" alt="5423 Diamonds" draggable="false" onerror="this.onerror=null; this.src=\'https://placehold.co/300x300/121215/ffffff?text=5423+Diamonds\';\">',
-                isSpecialOffer: false,
+                isSpecialOffer: true,    // Offre promotionnelle soumise au reset local
+                offerPrice: 41.59,
+                offerDiscountLabel: 'WELCOME PROMO',
+                paymentLinkOffer: 'https://buy.stripe.com/14AeVc73feVG9pM2C73F608',
+                paymentLink: 'https://buy.stripe.com/aFa7sKdrD3cY7hE90v3F605'
+            },
+            {
+                id: 'ff_6160',
+                category: 'freefire',
+                title: '6160 Diamonds',
+                price: 54.99,
+                originalPrice: 66.99,
+                discountLabel: '-€12.00',
+                icon: '<img src="https://i.imgur.com/eGvEvYi.png" class="w-full h-full object-contain p-1 rounded-lg" alt="6160 Diamonds" draggable="false" onerror="this.onerror=null; this.src=\'https://placehold.co/300x300/121215/ffffff?text=6160+Diamonds\';\">',
+                isSpecialOffer: true,    // Offre promotionnelle soumise au reset local
+                offerPrice: 49.99,
+                offerDiscountLabel: 'WELCOME PROMO',
                 isBestValue: true,
-                paymentLink: 'https://buy.stripe.com/14AeVc73feVG9pM2C73F608'
+                paymentLinkOffer: 'https://buy.stripe.com/5kQ6oGbjvaFqdG25Oj3F60a',
+                paymentLink: 'https://buy.stripe.com/bJeeVc0ERaFqeK63Gb3F609'
             },
             {
                 id: 'ff_1060',
@@ -712,6 +729,7 @@
             modalContent.classList.add('scale-100');
         }
 
+        // Ferme le modal de confirmation
         function closeConfirmModal() {
             const modal = document.getElementById('confirm-modal');
             const modalContent = document.getElementById('confirm-modal-content');
@@ -765,6 +783,7 @@
             modalContent.classList.add('scale-100');
         }
 
+        // Ferme le modal d'alerte
         function closeModal() {
             const modal = document.getElementById('message-modal');
             const modalContent = document.getElementById('message-modal-content');
@@ -780,4 +799,4 @@
         });
     </script>
 </body>
-</html> 
+</html>  

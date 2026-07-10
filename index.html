@@ -11,6 +11,10 @@
     <!-- FontAwesome pour les icônes -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
+    <!-- SDK Supabase et FingerprintJS pour bloquer l'appareil (cross-navigateur et incognito) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://openfpcdn.io/fingerprintjs/v4"></script>
+    
     <script>
         tailwind.config = {
             theme: {
@@ -320,10 +324,20 @@
             }
         });
 
+        // --- CONFIGURATION SUPABASE (Clés d'API connectées) ---
+        const SUPABASE_URL = "https://gupxctcifgizyfczopsj.supabase.co"; 
+        const SUPABASE_KEY = "sb_secret_2-Ssd8QH8E6l7L3p-AX6uA_vWL38u1O"; 
+
+        // Initialisation sécurisée du client Supabase
+        let supabaseClient = null;
+        if (SUPABASE_URL && SUPABASE_KEY) {
+            supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        }
+
         // --- Logique d'état de la boutique ---
         const NEW_CUSTOMER_OFFER_KEY = 'shadowplug_new_customer_used_time';
         
-        // Évaluation dynamique de la validité de l'offre avec reset mensuel (30 jours)
+        // Évaluation dynamique de la validité locale (fallback de secours)
         function checkOfferAvailability() {
             const offerUsedTime = localStorage.getItem(NEW_CUSTOMER_OFFER_KEY);
             if (!offerUsedTime) return true;
@@ -332,7 +346,6 @@
             const timePassed = Date.now() - parseInt(offerUsedTime, 10);
             
             if (timePassed >= oneMonthMs) {
-                // Temps écoulé, on nettoie le cache pour rendre l'offre à nouveau disponible
                 localStorage.removeItem(NEW_CUSTOMER_OFFER_KEY);
                 return true;
             }
@@ -342,6 +355,38 @@
         let isNewCustomerOfferAvailable = checkOfferAvailability();
         let activeCategory = 'freefire';
         let selectedProduct = null;
+        let deviceId = null;
+
+        // Évaluation de l'appareil via FingerprintJS + Supabase
+        async function initDeviceTracking() {
+            if (!supabaseClient) {
+                console.log("Supabase non configuré. Utilisation du stockage local temporaire.");
+                return;
+            }
+
+            try {
+                // Chargement de FingerprintJS
+                const fp = await FingerprintJS.load();
+                const result = await fp.get();
+                deviceId = result.visitorId; // Identifiant unique cross-navigateur sécurisé
+
+                // Vérification si l'identifiant d'appareil est présent dans Supabase
+                const { data, error } = await supabaseClient
+                    .from('device_offers')
+                    .select('device_fingerprint')
+                    .eq('device_fingerprint', deviceId)
+                    .maybeSingle();
+
+                if (data) {
+                    // L'appareil a déjà utilisé une offre !
+                    isNewCustomerOfferAvailable = false;
+                    renderProducts();
+                    resetCheckoutUI();
+                }
+            } catch (err) {
+                console.error("Erreur d'initialisation du tracking Supabase :", err);
+            }
+        }
 
         // --- Catalogue des produits ---
         const products = [
@@ -730,11 +775,24 @@
             const modalContent = document.getElementById('confirm-modal-content');
             const confirmBtn = document.getElementById('confirm-pay-action-btn');
 
-            confirmBtn.onclick = () => {
+            confirmBtn.onclick = async () => {
                 closeConfirmModal();
-                // Enregistre l'horodatage d'utilisation pour verrouiller l'offre pendant 30 jours
+                
+                // 1. Sauvegarde locale (fallback de secours)
                 localStorage.setItem(NEW_CUSTOMER_OFFER_KEY, Date.now().toString());
                 isNewCustomerOfferAvailable = false;
+                
+                // 2. Enregistrement dans Supabase si connecté
+                if (supabaseClient && deviceId) {
+                    try {
+                        await supabaseClient
+                            .from('device_offers')
+                            .insert([{ device_fingerprint: deviceId }]);
+                    } catch (err) {
+                        console.error("Erreur lors de l'envoi de l'empreinte d'appareil :", err);
+                    }
+                }
+                
                 executeRedirect(paymentUrl);
             };
 
@@ -809,8 +867,9 @@
 
         // Initialisation du catalogue au chargement du DOM
         document.addEventListener('DOMContentLoaded', () => {
+            initDeviceTracking();
             renderProducts();
         });
     </script>
 </body>
-</html> 
+</html>  

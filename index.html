@@ -147,8 +147,8 @@
                 <span class="text-white">SHADOW</span><span class="text-shadowRed text-glow-red">PLUG</span>
             </h1>
             
-            <!-- Badge de statut en ligne -->
-            <div class="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full text-xs font-semibold text-emerald-400">
+            <!-- Badge de statut en ligne / Utilisateur -->
+            <div id="user-status-badge" class="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full text-xs font-semibold text-emerald-400">
                 <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
                 ONLINE
             </div>
@@ -281,7 +281,7 @@
                     This is a <span class="text-shadowRed font-semibold">one-time promotional offer</span>. Once you click "Confirm & Pay", the promo will be marked as used on this device, <span class="text-white font-medium">even if you cancel or close the checkout page</span>.
                 </p>
                 <p class="text-zinc-500 text-[11px] mt-3">
-                    The offer resets automatically in 30 days.
+                    The offer resets automatically in 24 hours.
                 </p>
             </div>
             <div class="flex gap-3">
@@ -355,72 +355,135 @@
 
     <script>
         // --- Protocoles de sécurité (Anti-Inspect & Anti-Copie) ---
-        // Désactive le menu clic droit par défaut
         document.addEventListener('contextmenu', event => event.preventDefault());
         
-        // Bloque l'accès aux touches développeurs du clavier
         document.addEventListener('keydown', function(e) {
-            if (e.keyCode === 123) { // Touche F12
+            if (e.keyCode === 123) {
                 e.preventDefault();
                 return false;
             }
-            if (e.ctrlKey && e.shiftKey && e.keyCode === 73) { // Inspecter l'élément [Ctrl+Shift+I]
+            if (e.ctrlKey && e.shiftKey && e.keyCode === 73) {
                 e.preventDefault();
                 return false;
             }
-            if (e.ctrlKey && e.shiftKey && e.keyCode === 74) { // Console [Ctrl+Shift+J]
+            if (e.ctrlKey && e.shiftKey && e.keyCode === 74) {
                 e.preventDefault();
                 return false;
             }
-            if (e.ctrlKey && e.keyCode === 85) { // Voir le code source [Ctrl+U]
+            if (e.ctrlKey && e.keyCode === 85) {
                 e.preventDefault();
                 return false;
             }
-            if (e.ctrlKey && e.keyCode === 67) { // Copier [Ctrl+C]
+            if (e.ctrlKey && e.keyCode === 67) {
                 e.preventDefault();
                 return false;
             }
         });
 
-        // --- CONFIGURATION SUPABASE (Clés d'API connectées) ---
+        // --- CONFIGURATION SUPABASE ---
         const SUPABASE_URL = "https://gupxctcifgizyfczopsj.supabase.co"; 
-        
-        // CORRECTION : Utilise UNIQUEMENT la clé "anon" / "public" ici, jamais la "secret" !
         const SUPABASE_KEY = "sb_publishable_QMtB-zs_1lSxVQTHbStxww_3wBzaBaZ"; 
 
-        // Initialisation sécurisée du client Supabase
         let supabaseClient = null;
         if (SUPABASE_URL && SUPABASE_KEY) {
             supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         }
 
-        // --- Logique d'état de la boutique ---
-        const NEW_CUSTOMER_OFFER_KEY = 'shadowplug_new_customer_used_time';
-        
-        // Évaluation dynamique de la validité locale (fallback de secours)
-        function checkOfferAvailability() {
-            const offerUsedTime = localStorage.getItem(NEW_CUSTOMER_OFFER_KEY);
-            if (!offerUsedTime) return true;
+        // --- Clés de stockage LocalStorage ---
+        const USED_PROMOS_KEY = 'shadowplug_used_promos';
+        const SESSION_KEY = 'shadowplug_session';
+        const ONE_DAY_MS = 24 * 60 * 60 * 1000; // Reset quotidien (24 heures)
 
-            const oneMonthMs = 30 * 24 * 60 * 60 * 1000; // 30 Jours
-            const timePassed = Date.now() - parseInt(offerUsedTime, 10);
-            
-            if (timePassed >= oneMonthMs) {
-                localStorage.removeItem(NEW_CUSTOMER_OFFER_KEY);
-                return true;
-            }
-            return false;
-        }
-
-        let isNewCustomerOfferAvailable = checkOfferAvailability();
         let activeCategory = 'freefire';
         let selectedProduct = null;
         let deviceId = null;
 
-        // Nouveaux états pour l'authentification
         let currentUser = null;
         let isLoginMode = false;
-        let pendingCheckoutParams = null; // Sauvegarde le paiement en cours pendant l'auth
+        let pendingCheckoutParams = null;
+
+        // --- Système intelligent de réinitialisation quotidienne des offres ---
+        function getActiveUsedPromos() {
+            try {
+                const data = localStorage.getItem(USED_PROMOS_KEY);
+                if (!data) return {};
+                
+                const promos = JSON.parse(data);
+                const now = Date.now();
+                const activePromos = {};
+                let hasChanged = false;
+
+                // Ne garder que les offres utilisées il y a moins de 24h
+                for (const [productId, usedTime] of Object.entries(promos)) {
+                    if (now - usedTime < ONE_DAY_MS) {
+                        activePromos[productId] = usedTime;
+                    } else {
+                        hasChanged = true; // Offre expirée, donc réactivée !
+                    }
+                }
+
+                if (hasChanged) {
+                    localStorage.setItem(USED_PROMOS_KEY, JSON.stringify(activePromos));
+                }
+                return activePromos;
+            } catch (e) {
+                console.error("Erreur lecture promos locales:", e);
+                return {};
+            }
+        }
+
+        // Vérifie si l'offre d'un article spécifique est toujours disponible
+        function isPromoAvailableForProduct(productId) {
+            const activePromos = getActiveUsedPromos();
+            return !activePromos[productId];
+        }
+
+        // --- Logique d'authentification persistante ---
+        function loadLocalSession() {
+            try {
+                const sessionData = localStorage.getItem(SESSION_KEY);
+                if (sessionData) {
+                    currentUser = JSON.parse(sessionData);
+                    console.log("Session restaurée pour :", currentUser.email);
+                }
+            } catch (e) {
+                console.error("Erreur chargement session:", e);
+            }
+            updateUserHeaderUI();
+        }
+
+        // Mise à jour de l'en-tête utilisateur avec profil et bouton de déconnexion
+        function updateUserHeaderUI() {
+            const statusBadge = document.getElementById('user-status-badge');
+            if (statusBadge && currentUser) {
+                const username = currentUser.email.split('@')[0].toUpperCase();
+                statusBadge.innerHTML = `
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span class="max-w-[120px] truncate">${username}</span>
+                    <button onclick="handleLogout()" class="ml-2 pl-2 border-l border-white/10 text-zinc-400 hover:text-shadowRed transition-colors" title="Logout">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                    </button>
+                `;
+                statusBadge.className = "flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-full text-xs font-semibold text-emerald-400";
+            } else if (statusBadge) {
+                statusBadge.innerHTML = `
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    ONLINE
+                `;
+                statusBadge.className = "flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full text-xs font-semibold text-emerald-400";
+            }
+        }
+
+        function handleLogout() {
+            currentUser = null;
+            localStorage.removeItem(SESSION_KEY);
+            if (supabaseClient) {
+                supabaseClient.auth.signOut();
+            }
+            updateUserHeaderUI();
+            resetCheckoutUI();
+            renderProducts();
+        }
 
         // Évaluation de l'appareil via FingerprintJS + Supabase
         async function initDeviceTracking() {
@@ -430,26 +493,11 @@
             }
 
             try {
-                // Chargement de FingerprintJS
                 const fp = await FingerprintJS.load();
                 const result = await fp.get();
-                deviceId = result.visitorId; // Identifiant unique cross-navigateur sécurisé
-
-                // Vérification si l'identifiant d'appareil est présent dans Supabase
-                const { data, error } = await supabaseClient
-                    .from('device_offers')
-                    .select('device_fingerprint')
-                    .eq('device_fingerprint', deviceId)
-                    .maybeSingle();
-
-                if (data) {
-                    // L'appareil a déjà utilisé une offre !
-                    isNewCustomerOfferAvailable = false;
-                    renderProducts();
-                    resetCheckoutUI();
-                }
+                deviceId = result.visitorId;
             } catch (err) {
-                console.error("Erreur d'initialisation du tracking Supabase :", err);
+                console.error("Erreur d'initialisation du tracking :", err);
             }
         }
 
@@ -460,15 +508,15 @@
                 id: 'ff_110',
                 category: 'freefire',
                 title: '110 Diamonds',
-                price: 1.05,             // Prix régulier sur la boutique
-                originalPrice: 1.39,     // Prix standard d'origine
-                discountLabel: '-€0.34',  // Réduction standard
+                price: 1.05,
+                originalPrice: 1.39,
+                discountLabel: '-€0.34',
                 icon: '<img src="https://i.imgur.com/Cu4bom0.png" class="w-full h-full object-contain p-1 rounded-lg" alt="110 Diamonds" draggable="false" onerror="this.onerror=null; this.src=\'https://placehold.co/300x300/121215/ffffff?text=110+Diamonds\';">',
-                isSpecialOffer: true,    // Déclenche la logique d'offre de bienvenue (Local Storage)
-                offerPrice: 0.99,        // Prix spécial de l'offre
+                isSpecialOffer: true,
+                offerPrice: 0.99,
                 offerDiscountLabel: 'WELCOME PROMO',
-                paymentLinkOffer: 'https://buy.stripe.com/6oUcN473faFqdG25Oj3F606', // Lien Stripe spécial promo
-                paymentLink: 'https://buy.stripe.com/28EdR85Zb8xibxU7Wr3F600'      // Lien Stripe régulier standard
+                paymentLinkOffer: 'https://buy.stripe.com/6oUcN473faFqdG25Oj3F606',
+                paymentLink: 'https://buy.stripe.com/28EdR85Zb8xibxU7Wr3F600'
             },
             {
                 id: 'ff_231',
@@ -529,11 +577,11 @@
                 id: 'ff_5423',
                 category: 'freefire',
                 title: '5423 Diamonds',
-                price: 43.99,             // Prix régulier standard
-                originalPrice: 59.99,     // Prix standard d'origine
-                discountLabel: '-€16.00',  // Réduction standard
+                price: 43.99,
+                originalPrice: 59.99,
+                discountLabel: '-€16.00',
                 icon: '<img src="https://i.imgur.com/9VJpQEc.png" class="w-full h-full object-contain p-1 rounded-lg" alt="5423 Diamonds" draggable="false" onerror="this.onerror=null; this.src=\'https://placehold.co/300x300/121215/ffffff?text=5423+Diamonds\';">',
-                isSpecialOffer: true,    // Offre promotionnelle soumise au reset local
+                isSpecialOffer: true,
                 offerPrice: 41.59,
                 offerDiscountLabel: 'WELCOME PROMO',
                 paymentLinkOffer: 'https://buy.stripe.com/14AeVc73feVG9pM2C73F608',
@@ -547,7 +595,7 @@
                 originalPrice: 66.99,
                 discountLabel: '-€12.00',
                 icon: '<img src="https://i.imgur.com/eGvEvYi.png" class="w-full h-full object-contain p-1 rounded-lg" alt="6160 Diamonds" draggable="false" onerror="this.onerror=null; this.src=\'https://placehold.co/300x300/121215/ffffff?text=6160+Diamonds\';">',
-                isSpecialOffer: true,    // Offre promotionnelle soumise au reset local
+                isSpecialOffer: true,
                 offerPrice: 49.99,
                 offerDiscountLabel: 'WELCOME PROMO',
                 isBestValue: true,
@@ -558,11 +606,11 @@
                 id: 'ff_7290',
                 category: 'freefire',
                 title: '7290 Diamonds',
-                price: 59.99,             // Prix régulier standard
-                originalPrice: 78.99,     // Prix standard d'origine
-                discountLabel: '-€19.00',  // Réduction standard
+                price: 59.99,
+                originalPrice: 78.99,
+                discountLabel: '-€19.00',
                 icon: '<img src="https://i.imgur.com/JBNL2iI.png" class="w-full h-full object-contain p-1 rounded-lg" alt="7290 Diamonds" draggable="false" onerror="this.onerror=null; this.src=\'https://placehold.co/300x300/121215/ffffff?text=7290+Diamonds\';">',
-                isSpecialOffer: true,    // Offre promotionnelle soumise au reset local
+                isSpecialOffer: true,
                 offerPrice: 54.99,
                 offerDiscountLabel: 'WELCOME PROMO',
                 paymentLinkOffer: 'https://buy.stripe.com/eVqbJ0gDP9BmcBYfoT3F60c',
@@ -609,19 +657,16 @@
             }
         ];
 
-        // --- Fonctions d'exécution ---
-
-        // Formatage des prix en monnaie locale (Euro)
+        // --- Formatage des prix en monnaie locale ---
         const formatMoney = (amount) => {
             return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'EUR' }).format(amount);
         };
 
-        // Permet de basculer d'une catégorie de boutique à une autre
+        // Permet de basculer d'une catégorie à une autre
         function switchCategory(category) {
             activeCategory = category;
-            selectedProduct = null; // Réinitialise la sélection
+            selectedProduct = null;
 
-            // Met à jour l'état visuel des onglets (Tabs)
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.classList.remove('active', 'text-white');
                 btn.classList.add('text-gray-400');
@@ -646,7 +691,9 @@
 
             filtered.forEach(product => {
                 const isSelected = selectedProduct && selectedProduct.id === product.id;
-                const isOfferActive = product.isSpecialOffer && isNewCustomerOfferAvailable;
+                
+                // On vérifie la disponibilité de l'offre PROMO uniquement sur cet ID précis
+                const isOfferActive = product.isSpecialOffer && isPromoAvailableForProduct(product.id);
                 
                 let cardClass = `product-card bg-shadowCard rounded-xl p-1 cursor-pointer flex flex-col h-full z-10 ${isSelected ? 'selected' : ''}`;
                 let badgeStyle = "bg-red-950/50 text-shadowRed border border-shadowRed/20";
@@ -658,7 +705,6 @@
                     cardClass += ` border-zinc-700`;
                 }
 
-                // Génération de la mise en page dynamique pour les prix
                 let priceHtml = '';
                 let discountLabelToShow = product.discountLabel;
 
@@ -688,13 +734,11 @@
 
                 const html = `
                     <div class="${cardClass}" onclick="selectProduct('${product.id}')" id="card-${product.id}">
-                        <!-- Emplacement de l'image -->
                         <div class="img-placeholder h-32 rounded-lg mb-3 overflow-hidden">
                             ${product.icon}
                             ${isOfferActive ? '<div class="absolute top-2 left-2 bg-black/80 px-2 py-0.5 rounded text-[10px] font-bold text-shadowRed border border-shadowRed/30">DEAL</div>' : ''}
                         </div>
                         
-                        <!-- Détails du produit -->
                         <div class="px-2 pb-2 flex-grow flex flex-col justify-between">
                             <div>
                                 <h3 class="text-sm font-semibold text-gray-100 leading-tight">${product.title}</h3>
@@ -714,7 +758,6 @@
             });
         }
 
-        // Gère les changements d'état lors de la sélection d'un produit
         function selectProduct(id) {
             selectedProduct = products.find(p => p.id === id);
             renderProducts();
@@ -757,14 +800,14 @@
             const mobilePayBtn = document.getElementById('mobile-pay-btn');
             const mobilePriceContainer = document.getElementById('mobile-price-container');
 
-            const isOfferActive = selectedProduct.isSpecialOffer && isNewCustomerOfferAvailable;
+            // On regarde uniquement si l'offre pour CE produit est disponible
+            const isOfferActive = selectedProduct.isSpecialOffer && isPromoAvailableForProduct(selectedProduct.id);
             const activePaymentLink = isOfferActive 
                 ? selectedProduct.paymentLinkOffer 
                 : selectedProduct.paymentLink;
 
             const currentPrice = isOfferActive ? selectedProduct.offerPrice : selectedProduct.price;
 
-            // Mise à jour de l'affichage sur ordinateur
             let detailsHtml = `
                 <div class="flex justify-between items-center mb-2">
                     <span class="text-zinc-400 text-sm">Product Pack:</span>
@@ -790,13 +833,11 @@
 
             desktopCheckoutDetails.innerHTML = detailsHtml;
             
-            // Activation du bouton sur PC
             desktopPayBtn.disabled = false;
             desktopPayBtn.className = "w-full bg-shadowRed hover:bg-shadowRedHover text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all duration-300 shadow-[0_0_20px_rgba(229,9,20,0.4)] border border-transparent cursor-pointer";
             desktopPayBtn.innerHTML = `Checkout Securely <i class="fa-solid fa-arrow-right ml-1"></i>`;
             desktopPayBtn.onclick = () => initiateCheckout();
 
-            // Mise à jour de la barre mobile
             mobilePriceContainer.innerHTML = `
                 <div class="text-zinc-400 text-xs font-medium">${selectedProduct.title}</div>
                 <div class="flex items-center gap-2">
@@ -805,14 +846,13 @@
                 </div>
             `;
 
-            // Activation du bouton sur Mobile
             mobilePayBtn.disabled = false;
             mobilePayBtn.className = "flex-1 bg-shadowRed hover:bg-shadowRedHover text-white font-bold py-3.5 px-6 rounded-xl transition-all duration-300 shadow-[0_0_20px_rgba(229,9,20,0.4)] flex items-center justify-center gap-2 border border-transparent cursor-pointer";
             mobilePayBtn.innerHTML = `Pay <i class="fa-solid fa-arrow-right text-xs"></i>`;
             mobilePayBtn.onclick = () => initiateCheckout();
         }
 
-        // Affiche la fenêtre pop-up d'avertissement pour les offres spéciales
+        // Affiche la fenêtre d'avertissement pour les offres spéciales
         function openConfirmModal(paymentUrl) {
             const modal = document.getElementById('confirm-modal');
             const modalContent = document.getElementById('confirm-modal-content');
@@ -821,21 +861,30 @@
             confirmBtn.onclick = async () => {
                 closeConfirmModal();
                 
-                // 1. Sauvegarde locale (fallback de secours)
-                localStorage.setItem(NEW_CUSTOMER_OFFER_KEY, Date.now().toString());
-                isNewCustomerOfferAvailable = false;
+                // 1. Sauvegarde locale : marquer uniquement cet article précis comme utilisé à l'instant T
+                const usedPromos = getActiveUsedPromos();
+                usedPromos[selectedProduct.id] = Date.now();
+                localStorage.setItem(USED_PROMOS_KEY, JSON.stringify(usedPromos));
                 
                 // 2. Enregistrement dans Supabase si connecté
                 if (supabaseClient && deviceId) {
                     try {
                         await supabaseClient
                             .from('device_offers')
-                            .insert([{ device_fingerprint: deviceId }]);
+                            .insert([{ 
+                                device_fingerprint: deviceId,
+                                product_id: selectedProduct.id,
+                                used_at: new Date().toISOString()
+                            }]);
                     } catch (err) {
-                        console.error("Erreur lors de l'envoi de l'empreinte d'appareil :", err);
+                        console.error("Erreur d'envoi de l'empreinte :", err);
                     }
                 }
                 
+                // Rafraîchir instantanément l'affichage des produits
+                renderProducts();
+                resetCheckoutUI();
+
                 executeRedirect(paymentUrl);
             };
 
@@ -844,7 +893,6 @@
             modalContent.classList.add('scale-100');
         }
 
-        // Ferme le modal de confirmation
         function closeConfirmModal() {
             const modal = document.getElementById('confirm-modal');
             const modalContent = document.getElementById('confirm-modal-content');
@@ -853,7 +901,6 @@
             modalContent.classList.add('scale-95');
         }
 
-        // Séquence de transition sécurisée avec effet de chargement avant redirection
         function executeRedirect(paymentUrl) {
             const desktopPayBtn = document.getElementById('desktop-pay-btn');
             const mobilePayBtn = document.getElementById('mobile-pay-btn');
@@ -867,7 +914,6 @@
             }, 600);
         }
 
-        // Dispatcher de paiement sécurisé
         function dispatchPayment(paymentUrl, isOfferUsed) {
             if (isOfferUsed) {
                 openConfirmModal(paymentUrl);
@@ -898,7 +944,6 @@
             modalContent.classList.add('scale-100');
         }
 
-        // Ferme le modal d'alerte
         function closeModal() {
             const modal = document.getElementById('message-modal');
             const modalContent = document.getElementById('message-modal-content');
@@ -908,15 +953,12 @@
             modalContent.classList.add('scale-95');
         }
 
-
-        // Déclenche le processus de paiement global (et force l'authentification si nécessaire)
         function initiateCheckout() {
             if (!selectedProduct) return;
-            const isOfferActive = selectedProduct.isSpecialOffer && isNewCustomerOfferAvailable;
+            const isOfferActive = selectedProduct.isSpecialOffer && isPromoAvailableForProduct(selectedProduct.id);
             const activePaymentLink = isOfferActive ? selectedProduct.paymentLinkOffer : selectedProduct.paymentLink;
             
             if (!currentUser) {
-                // Sauvegarde le contexte de paiement pour le déclencher post-login
                 pendingCheckoutParams = { url: activePaymentLink, isOfferUsed: isOfferActive };
                 openAuthModal();
                 return;
@@ -963,10 +1005,14 @@
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Processing...';
 
-            // Mode hors-ligne / simulation si Supabase n'est pas configuré
+            // Simulation d'une authentification persistante réussie
             if (!supabaseClient) {
                 setTimeout(() => {
                     currentUser = { email };
+                    // Sauvegarde de l'utilisateur dans le LocalStorage
+                    localStorage.setItem(SESSION_KEY, JSON.stringify(currentUser));
+                    updateUserHeaderUI();
+                    
                     closeAuthModal();
                     if (pendingCheckoutParams) {
                         dispatchPayment(pendingCheckoutParams.url, pendingCheckoutParams.isOfferUsed);
@@ -990,6 +1036,10 @@
 
                 if (error) throw error;
 
+                // Sauvegarde de l'utilisateur Supabase dans le LocalStorage
+                localStorage.setItem(SESSION_KEY, JSON.stringify(currentUser));
+                updateUserHeaderUI();
+
                 closeAuthModal();
                 if (pendingCheckoutParams) {
                     dispatchPayment(pendingCheckoutParams.url, pendingCheckoutParams.isOfferUsed);
@@ -1007,23 +1057,28 @@
             }
         }
         
-        // Fallback global pour éviter une erreur si le DOM s'éxécute trop vite
         function executePromoCheckout() {
             console.log("Waiting for checkout initialization...");
         }
 
-        // Initialisation du catalogue au chargement du DOM
+        // Initialisation globale
         document.addEventListener('DOMContentLoaded', async () => {
-            // Vérifier si une session utilisateur existe déjà en arrière-plan
-            if (supabaseClient) {
+            // 1. Charger la session persistée (si existante)
+            loadLocalSession();
+            
+            // 2. Tenter de charger depuis Supabase si connecté
+            if (supabaseClient && !currentUser) {
                 try {
                     const { data } = await supabaseClient.auth.getSession();
                     if (data?.session) {
                         currentUser = data.session.user;
+                        localStorage.setItem(SESSION_KEY, JSON.stringify(currentUser));
+                        updateUserHeaderUI();
                     }
                 } catch(e) { console.error("Auth init error:", e); }
             }
             
+            // 3. Initier le suivi d'appareil et le catalogue
             initDeviceTracking();
             renderProducts();
         });

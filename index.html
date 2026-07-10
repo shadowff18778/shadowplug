@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShadowPlug - Premium Store</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        shadowDark: '#08080a',
+                        shadowCard: '#121215',
+                        shadowRed: '#e50914', // Aggressive Netflix/Gaming Red
+                        shadowRedHover: '#b20710',
+                        shadowRedGlow: 'rgba(229, 9, 20, 0.4)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Base styles and anti-copy protections */
+        body {
+            background-color: #08080a;
+            color: #ffffff;
+            /* Prevent text selection */
+            -webkit-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            overflow-x: hidden;
+            /* Hide scrollbar for IE, Edge and Firefox */
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+
+        /* Hide scrollbar for Chrome, Safari and Opera */
+        ::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* Animations */
+        .fade-in {
+            animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Product Card styling */
+        .product-card {
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            border: 1px solid #1f1f24;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .product-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 100%;
+            background: linear-gradient(180deg, rgba(229,9,20,0) 0%, rgba(229,9,20,0.03) 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .product-card:hover {
+            transform: translateY(-4px);
+            border-color: #e50914;
+            box-shadow: 0 12px 24px rgba(0,0,0,0.6), 0 0 20px rgba(229, 9, 20, 0.15);
+        }
+
+        .product-card:hover::before {
+            opacity: 1;
+        }
+        
+        /* Selected Card state */
+        .product-card.selected {
+            border-color: #e50914;
+            box-shadow: 0 0 0 2px #e50914, 0 0 25px rgba(229, 9, 20, 0.25);
+        }
+
+        /* Image placeholder style */
+        .img-placeholder {
+            background: linear-gradient(135deg, #16161a, #1f1f25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* Disable image dragging */
+        img {
+            -webkit-user-drag: none;
+            user-drag: none;
+        }
+
+        /* Bottom Action Bar for mobile */
+        .bottom-bar {
+            box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.7);
+            border-top: 1px solid #1f1f24;
+        }
+
+        /* Glow effects */
+        .text-glow-red {
+            text-shadow: 0 0 10px rgba(229, 9, 20, 0.6);
+        }
+        
+        .tab-btn {
+            transition: all 0.3s ease;
+        }
+        
+        .tab-btn.active {
+            background-color: #e50914;
+            color: #ffffff;
+            box-shadow: 0 0 15px rgba(229, 9, 20, 0.4);
+        }
+    </style>
+</head>
+<body class="font-sans antialiased bg-shadowDark flex flex-col min-h-screen pb-28 lg:pb-0" oncontextmenu="return false;">
+    
+    <!-- Navigation / Header -->
+    <header class="sticky top-0 z-50 bg-shadowDark/95 backdrop-blur-md border-b border-white/5 px-4">
+        <div class="max-w-6xl mx-auto h-16 flex items-center justify-between">
+            <!-- Logo Title -->
+            <h1 class="text-2xl font-black tracking-wider uppercase flex items-center gap-1.5">
+                <span class="text-white">SHADOW</span><span class="text-shadowRed text-glow-red">PLUG</span>
+            </h1>
+            
+            <!-- Status Badge -->
+            <div class="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full text-xs font-semibold text-emerald-400">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                ONLINE
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Grid -->
+    <main class="flex-grow max-w-6xl mx-auto w-full px-4 py-6 flex flex-col lg:flex-row gap-8">
+        
+        <!-- Left Column: Categories and Products Grid -->
+        <div class="w-full lg:w-2/3 flex flex-col gap-6 fade-in">
+            
+            <!-- Delivery Alert Banner -->
+            <div class="bg-gradient-to-r from-shadowCard to-red-950/20 border border-white/5 rounded-2xl p-4 flex items-center gap-4 shadow-xl">
+                <div class="w-12 h-12 rounded-xl bg-shadowRed/10 border border-shadowRed/20 flex items-center justify-center text-shadowRed text-xl shrink-0">
+                    <i class="fa-solid fa-bolt-lightning"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-white text-sm md:text-base">Ultra-Fast Safe Delivery</h3>
+                    <p class="text-xs text-gray-400 mt-0.5">Average delivery time: <span class="text-shadowRed font-semibold">15 to 20 minutes</span> depending on queue status.</p>
+                </div>
+            </div>
+
+            <!-- Category Switcher Tabs -->
+            <div class="flex p-1 bg-shadowCard border border-white/5 rounded-xl gap-1">
+                <button onclick="switchCategory('freefire')" id="tab-freefire" class="tab-btn active flex-1 py-3 px-4 rounded-lg font-bold text-sm flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-fire-flame-curved"></i>
+                    Free Fire Top-Up
+                </button>
+                <button onclick="switchCategory('netflix')" id="tab-netflix" class="tab-btn flex-1 py-3 px-4 rounded-lg font-bold text-sm text-gray-400 hover:text-white flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-ticket"></i>
+                    Netflix Premium
+                </button>
+            </div>
+
+            <!-- Products Container -->
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4" id="products-container">
+                <!-- Injected programmatically by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Right Column: Info & Action Dashboard -->
+        <div class="w-full lg:w-1/3 fade-in" style="animation-delay: 0.1s;">
+            <div class="lg:sticky lg:top-24 space-y-6">
+                
+                <!-- Guidelines & Order Info -->
+                <div class="bg-shadowCard rounded-2xl p-5 border border-white/5 shadow-2xl relative overflow-hidden">
+                    <div class="absolute -right-8 -top-8 w-24 h-24 bg-shadowRed/5 rounded-full blur-xl pointer-events-none"></div>
+                    <h3 class="text-base font-bold mb-4 border-b border-white/5 pb-2 flex items-center gap-2">
+                        <i class="fa-solid fa-circle-info text-shadowRed"></i>
+                        Checkout Guidelines
+                    </h3>
+                    <div class="space-y-4 text-xs md:text-sm text-gray-400">
+                        <p class="flex items-start gap-2.5">
+                            <span class="flex items-center justify-center w-5 h-5 bg-white/5 border border-white/10 rounded-full text-white text-xs font-semibold shrink-0">1</span>
+                            <span>Choose your premium package on the left.</span>
+                        </p>
+                        <p class="flex items-start gap-2.5">
+                            <span class="flex items-center justify-center w-5 h-5 bg-white/5 border border-white/10 rounded-full text-white text-xs font-semibold shrink-0">2</span>
+                            <span>No need to register or enter IDs here! Enter all your account/delivery details directly during payment.</span>
+                        </p>
+                        <p class="flex items-start gap-2.5">
+                            <span class="flex items-center justify-center w-5 h-5 bg-white/5 border border-white/10 rounded-full text-white text-xs font-semibold shrink-0">3</span>
+                            <span>Receive your order details in <span class="text-white font-medium">15-20 minutes</span> maximum.</span>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Desktop Summary Area -->
+                <div class="hidden lg:block bg-shadowCard rounded-2xl p-5 border border-white/5 shadow-2xl">
+                    <div id="desktop-checkout-details" class="mb-4">
+                        <div class="text-gray-500 text-sm text-center py-6">
+                            <i class="fa-solid fa-basket-shopping text-3xl mb-2 block opacity-30"></i>
+                            Select an item to view summary
+                        </div>
+                    </div>
+                    
+                    <button id="desktop-pay-btn" disabled
+                        class="w-full bg-white/5 text-gray-500 font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all duration-300 cursor-not-allowed border border-white/5">
+                        <i class="fa-solid fa-lock"></i>
+                        Select a Package
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Mobile Navigation Bottom Bar -->
+    <div class="lg:hidden fixed bottom-0 left-0 w-full bg-shadowCard/95 backdrop-blur-md bottom-bar z-40 p-4 transition-transform duration-300" id="mobile-bottom-bar">
+        <div class="max-w-md mx-auto flex items-center justify-between gap-4">
+            <!-- Price Block -->
+            <div class="flex-1" id="mobile-price-container">
+                <div class="text-gray-500 text-xs font-medium uppercase tracking-wider">Total Amount</div>
+                <div class="text-xl font-bold text-white">-- €</div>
+            </div>
+            
+            <!-- Checkout Action Trigger -->
+            <button id="mobile-pay-btn" disabled
+                class="flex-1 bg-white/5 text-gray-500 font-bold py-3.5 px-6 rounded-xl transition-all duration-300 cursor-not-allowed flex items-center justify-center gap-2 border border-white/5">
+                Pay Now
+            </button>
+        </div>
+    </div>
+
+    <!-- Message Modal for errors/alerts (Custom UI) -->
+    <div id="message-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="bg-shadowCard border border-white/10 rounded-2xl p-6 max-w-sm w-full mx-4 shadow-2xl transform scale-95 transition-transform duration-300" id="message-modal-content">
+            <div class="text-center mb-6">
+                <div id="modal-icon" class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-red-950/30 text-shadowRed mb-4 border border-shadowRed/20">
+                    <i class="fa-solid fa-triangle-exclamation text-xl"></i>
+                </div>
+                <h3 id="modal-title" class="text-lg font-bold text-white mb-2">Notice</h3>
+                <p id="modal-message" class="text-gray-400 text-sm leading-relaxed"></p>
+            </div>
+            <button onclick="closeModal()" class="w-full bg-shadowRed hover:bg-shadowRedHover text-white font-bold py-3 rounded-xl transition-colors border border-white/10 shadow-[0_0_15px_rgba(229,9,20,0.3)]">
+                Got It
+            </button>
+        </div>
+    </div>
+
+    <!-- Interactive Confirm Modal for Promos -->
+    <div id="confirm-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="bg-shadowCard border border-shadowRed/30 rounded-2xl p-6 max-w-sm w-full mx-4 shadow-[0_0_50px_rgba(229,9,20,0.15)] transform scale-95 transition-transform duration-300" id="confirm-modal-content">
+            <div class="text-center mb-6">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-950/40 text-shadowRed mb-4 border border-shadowRed/40 animate-pulse">
+                    <i class="fa-solid fa-triangle-exclamation text-2xl"></i>
+                </div>
+                <h3 class="text-xl font-black text-white mb-2 uppercase tracking-wide">Warning: Promo Offer</h3>
+                <p class="text-gray-400 text-xs md:text-sm leading-relaxed">
+                    This is a <span class="text-shadowRed font-semibold">one-time promotional offer</span>. Once you click "Confirm & Pay", the promo will be marked as used on this device, <span class="text-white font-medium">even if you cancel or close the checkout page</span>.
+                </p>
+                <p class="text-zinc-500 text-[11px] mt-3">
+                    The offer resets automatically in 30 days.
+                </p>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="closeConfirmModal()" class="flex-1 bg-white/5 hover:bg-white/10 text-gray-400 font-bold py-3 rounded-xl transition-colors border border-white/5 text-sm">
+                    Cancel
+                </button>
+                <button id="confirm-pay-action-btn" class="flex-1 bg-shadowRed hover:bg-shadowRedHover text-white font-bold py-3 rounded-xl transition-colors border border-transparent shadow-[0_0_15px_rgba(229,9,20,0.3)] text-sm">
+                    Confirm & Pay
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Security Protocols (Anti-Inspect & Anti-Copy) ---
+        // Prevent default context menus
+        document.addEventListener('contextmenu', event => event.preventDefault());
+        
+        // Trap specific debugger keyboard commands
+        document.addEventListener('keydown', function(e) {
+            if (e.keyCode === 123) { // F12 Key
+                e.preventDefault();
+                return false;
+            }
+            if (e.ctrlKey && e.shiftKey && e.keyCode === 73) { // Inspect Mode [Ctrl+Shift+I]
+                e.preventDefault();
+                return false;
+            }
+            if (e.ctrlKey && e.shiftKey && e.keyCode === 74) { // Console [Ctrl+Shift+J]
+                e.preventDefault();
+                return false;
+            }
+            if (e.ctrlKey && e.keyCode === 85) { // Source [Ctrl+U]
+                e.preventDefault();
+                return false;
+            }
+            if (e.ctrlKey && e.keyCode === 67) { // Copy [Ctrl+C]
+                e.preventDefault();
+                return false;
+            }
+        });
+
+        // --- Store State Logic ---
+        const NEW_CUSTOMER_OFFER_KEY = 'shadowplug_new_customer_used_time';
+        
+        // Dynamic offer evaluation with monthly reset logic (30 days limit)
+        function checkOfferAvailability() {
+            const offerUsedTime = localStorage.getItem(NEW_CUSTOMER_OFFER_KEY);
+            if (!offerUsedTime) return true;
+
+            const oneMonthMs = 30 * 24 * 60 * 60 * 1000; // 30 Days
+            const timePassed = Date.now() - parseInt(offerUsedTime, 10);
+            
+            if (timePassed >= oneMonthMs) {
+                // Time window exceeded, reset and offer is available again
+                localStorage.removeItem(NEW_CUSTOMER_OFFER_KEY);
+                return true;
+            }
+            return false;
+        }
+
+        let isNewCustomerOfferAvailable = checkOfferAvailability();
+        let activeCategory = 'freefire';
+        let selectedProduct = null;
+
+        // --- Catalog Definition ---
+        const products = [
+            // --- CATEGORY: FREE FIRE ---
+            {
+                id: 'ff_110',
+                category: 'freefire',
+                title: '110 Diamonds',
+                price: 1.05,             // Regular price on the site
+                originalPrice: 1.39,     // Original standard store price
+                discountLabel: '-€0.34',  // Regular discount representation
+                icon: '<img src="https://i.imgur.com/Cu4bom0.png" class="w-full h-full object-contain p-1 rounded-lg" alt="110 Diamonds" draggable="false" onerror="this.onerror=null; this.src=\'https://placehold.co/300x300/121215/ffffff?text=110+Diamonds\';\">',
+                isSpecialOffer: true,    // Triggers New Customer / LocalStorage logic
+                offerPrice: 0.99,        // Specific Offer price
+                offerDiscountLabel: 'WELCOME PROMO',
+                paymentLinkOffer: 'https://buy.stripe.com/6oUcN473faFqdG25Oj3F606', // Promo Link
+                paymentLink: 'https://buy.stripe.com/28EdR85Zb8xibxU7Wr3F600'      // Standard Link after promo
+            },
+            {
+                id: 'ff_231',
+                category: 'freefire',
+                title: '231 Diamonds',
+                price: 1.99,
+                originalPrice: 2.59,
+                discountLabel: '-€0.60',
+                icon: '<img src="https://i.imgur.com/Ixryv9v.png" class="w-full h-full object-contain p-1 rounded-lg" alt="231 Diamonds" draggable="false" onerror="this.onerror=null; this.src=\'https://placehold.co/300x300/121215/ffffff?text=231+Diamonds\';\">',
+                isSpecialOffer: false,
+                paymentLink: 'https://buy.stripe.com/eVq4gy0ERdRC9pM6Sn3F601'
+            },
+            {
+                id: 'ff_1060',
+                category: 'freefire',
+                title: '1060 Diamonds',
+                price: 8.79,
+                originalPrice: 10.99,
+                discountLabel: '-€2.20',
+                icon: '<div class="relative"><i class="fa-solid fa-box-open text-zinc-600 text-4xl"></i><i class="fa-regular fa-gem text-blue-400 text-2xl absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" style="filter: drop-shadow(0 0 10px rgba(96,165,250,0.8));"></i></div>',
+                isSpecialOffer: false,
+                paymentLink: 'https://buy.stripe.com/test_normal_ff_1060'
+            },
+            {
+                id: 'ff_2180',
+                category: 'freefire',
+                title: '2180 Diamonds',
+                price: 17.81,
+                originalPrice: 24.80,
+                discountLabel: '-€6.99',
+                isBestValue: true,
+                icon: '<div class="relative"><i class="fa-solid fa-toolbox text-zinc-500 text-5xl"></i><i class="fa-solid fa-gem text-blue-400 text-xl absolute -top-1.5 right-0" style="filter: drop-shadow(0 0 15px rgba(96,165,250,1));"></i><i class="fa-solid fa-gem text-blue-400 text-xl absolute -top-1.5 left-0" style="filter: drop-shadow(0 0 15px rgba(96,165,250,1));"></i></div>',
+                isSpecialOffer: false,
+                paymentLink: 'https://buy.stripe.com/test_normal_ff_2180'
+            },
+            {
+                id: 'ff_5600',
+                category: 'freefire',
+                title: '5600 Diamonds',
+                price: 44.61,
+                originalPrice: 59.99,
+                discountLabel: '-€15.38',
+                icon: '<div class="relative"><i class="fa-solid fa-vault text-amber-600 text-5xl"></i><div class="absolute inset-0 flex items-center justify-center"><i class="fa-solid fa-gem text-blue-400 text-2xl" style="filter: drop-shadow(0 0 20px rgba(96,165,250,1));"></i></div></div>',
+                isSpecialOffer: false,
+                paymentLink: 'https://buy.stripe.com/test_normal_ff_5600'
+            },
+
+            // --- CATEGORY: NETFLIX ---
+            {
+                id: 'nf_1m_premium',
+                category: 'netflix',
+                title: 'Netflix Premium (1M)',
+                subtitle: 'Ultra HD 4K - Instant Access',
+                price: 2.99,
+                originalPrice: 17.99,
+                discountLabel: '-83%',
+                icon: '<div class="relative"><i class="fa-solid fa-tv text-zinc-700 text-5xl"></i><div class="absolute inset-0 flex items-center justify-center text-xs font-black text-shadowRed">4K</div></div>',
+                isSpecialOffer: false,
+                paymentLink: 'https://buy.stripe.com/test_nf_1m'
+            },
+            {
+                id: 'nf_3m_premium',
+                category: 'netflix',
+                title: 'Netflix Premium (3M)',
+                subtitle: 'Ultra HD 4K - Instant Access',
+                price: 7.99,
+                originalPrice: 53.97,
+                discountLabel: '-85%',
+                isBestValue: true,
+                icon: '<div class="relative"><i class="fa-solid fa-display text-zinc-600 text-5xl"></i><div class="absolute inset-0 flex items-center justify-center text-xs font-black text-shadowRed" style="filter: drop-shadow(0 0 8px rgba(229,9,20,0.6));">UHD</div></div>',
+                isSpecialOffer: false,
+                paymentLink: 'https://buy.stripe.com/test_nf_3m'
+            },
+            {
+                id: 'nf_card_25',
+                category: 'netflix',
+                title: 'Netflix Gift Card €25',
+                subtitle: 'Digital Code Delivery',
+                price: 19.99,
+                originalPrice: 25.00,
+                discountLabel: '-20%',
+                icon: '<i class="fa-solid fa-credit-card text-shadowRed text-4xl" style="filter: drop-shadow(0 0 12px rgba(229,9,20,0.5));"></i>',
+                isSpecialOffer: false,
+                paymentLink: 'https://buy.stripe.com/test_nf_card25'
+            }
+        ];
+
+        // --- Functions ---
+
+        // Currency Formatting
+        const formatMoney = (amount) => {
+            return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'EUR' }).format(amount);
+        };
+
+        // Switch Store View Categories
+        function switchCategory(category) {
+            activeCategory = category;
+            selectedProduct = null; // Reset selection
+
+            // Reset Tab UI
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active', 'text-white');
+                btn.classList.add('text-gray-400');
+            });
+
+            const activeTab = document.getElementById(`tab-${category}`);
+            if (activeTab) {
+                activeTab.classList.add('active', 'text-white');
+                activeTab.classList.remove('text-gray-400');
+            }
+
+            renderProducts();
+            resetCheckoutUI();
+        }
+
+        // Render Cards based on Active Filter
+        function renderProducts() {
+            const container = document.getElementById('products-container');
+            container.innerHTML = '';
+            
+            const filtered = products.filter(p => p.category === activeCategory);
+
+            filtered.forEach(product => {
+                const isSelected = selectedProduct && selectedProduct.id === product.id;
+                const isOfferActive = product.isSpecialOffer && isNewCustomerOfferAvailable;
+                
+                let cardClass = `product-card bg-shadowCard rounded-xl p-1 cursor-pointer flex flex-col h-full z-10 ${isSelected ? 'selected' : ''}`;
+                let badgeStyle = "bg-red-950/50 text-shadowRed border border-shadowRed/20";
+                
+                if (isOfferActive) {
+                    cardClass += ` border-shadowRed shadow-[0_0_15px_rgba(229,9,20,0.15)]`;
+                    badgeStyle = "bg-shadowRed text-white font-bold animate-pulse";
+                } else if (product.isBestValue && !isSelected) {
+                    cardClass += ` border-zinc-700`;
+                }
+
+                // Dynamic Price layout rendering
+                let priceHtml = '';
+                let discountLabelToShow = product.discountLabel;
+
+                if (isOfferActive) {
+                    discountLabelToShow = product.offerDiscountLabel;
+                    priceHtml = `
+                        <div>
+                            <div class="flex items-center gap-1">
+                                <span class="text-base font-bold text-shadowRed text-glow-red">${formatMoney(product.offerPrice)}</span>
+                            </div>
+                            <div class="text-[10px] text-zinc-500 flex flex-col mt-0.5 leading-tight">
+                                <span>Reg: <span class="text-zinc-300 font-medium">${formatMoney(product.price)}</span></span>
+                                <span>Original: <span class="line-through">${formatMoney(product.originalPrice)}</span></span>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    priceHtml = `
+                        <div>
+                            <div class="flex items-center gap-1">
+                                <span class="text-base font-bold text-white">${formatMoney(product.price)}</span>
+                            </div>
+                            <div class="text-[11px] text-zinc-600 line-through">${formatMoney(product.originalPrice)}</div>
+                        </div>
+                    `;
+                }
+
+                const html = `
+                    <div class="${cardClass}" onclick="selectProduct('${product.id}')" id="card-${product.id}">
+                        <!-- Graphics/Asset Slot -->
+                        <div class="img-placeholder h-32 rounded-lg mb-3 overflow-hidden">
+                            ${product.icon}
+                            ${isOfferActive ? '<div class="absolute top-2 left-2 bg-black/80 px-2 py-0.5 rounded text-[10px] font-bold text-shadowRed border border-shadowRed/30">DEAL</div>' : ''}
+                        </div>
+                        
+                        <!-- Descriptor Details -->
+                        <div class="px-2 pb-2 flex-grow flex flex-col justify-between">
+                            <div>
+                                <h3 class="text-sm font-semibold text-gray-100 leading-tight">${product.title}</h3>
+                                ${product.subtitle ? `<p class="text-[11px] text-zinc-500 mt-0.5 font-medium leading-tight">${product.subtitle}</p>` : ''}
+                            </div>
+                            
+                            <div class="mt-4 flex items-end justify-between">
+                                ${priceHtml}
+                                <div class="text-[10px] px-1.5 py-0.5 rounded font-bold ${badgeStyle}">
+                                    ${discountLabelToShow}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', html);
+            });
+        }
+
+        // Handle selection state shifts
+        function selectProduct(id) {
+            selectedProduct = products.find(p => p.id === id);
+            renderProducts();
+            updateCheckoutUI();
+        }
+
+        // Clear Selection state visual representations
+        function resetCheckoutUI() {
+            const desktopCheckoutDetails = document.getElementById('desktop-checkout-details');
+            const desktopPayBtn = document.getElementById('desktop-pay-btn');
+            const mobilePayBtn = document.getElementById('mobile-pay-btn');
+            const mobilePriceContainer = document.getElementById('mobile-price-container');
+
+            desktopCheckoutDetails.innerHTML = `
+                <div class="text-gray-500 text-sm text-center py-6">
+                    <i class="fa-solid fa-basket-shopping text-3xl mb-2 block opacity-30"></i>
+                    Select an item to view summary
+                </div>
+            `;
+            
+            desktopPayBtn.disabled = true;
+            desktopPayBtn.className = "w-full bg-white/5 text-gray-500 font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all duration-300 cursor-not-allowed border border-white/5";
+            desktopPayBtn.innerHTML = `<i class="fa-solid fa-lock"></i> Select a Package`;
+
+            mobilePriceContainer.innerHTML = `
+                <div class="text-gray-500 text-xs font-medium uppercase tracking-wider">Total Amount</div>
+                <div class="text-xl font-bold text-white">-- €</div>
+            `;
+            mobilePayBtn.disabled = true;
+            mobilePayBtn.className = "flex-1 bg-white/5 text-gray-500 font-bold py-3.5 px-6 rounded-xl transition-all duration-300 cursor-not-allowed flex items-center justify-center gap-2 border border-white/5";
+            mobilePayBtn.innerHTML = `Pay Now`;
+        }
+
+        // Apply Selection State details to checkout actions
+        function updateCheckoutUI() {
+            if (!selectedProduct) return;
+
+            const desktopCheckoutDetails = document.getElementById('desktop-checkout-details');
+            const desktopPayBtn = document.getElementById('desktop-pay-btn');
+            const mobilePayBtn = document.getElementById('mobile-pay-btn');
+            const mobilePriceContainer = document.getElementById('mobile-price-container');
+
+            const isOfferActive = selectedProduct.isSpecialOffer && isNewCustomerOfferAvailable;
+            const activePaymentLink = isOfferActive 
+                ? selectedProduct.paymentLinkOffer 
+                : selectedProduct.paymentLink;
+
+            const currentPrice = isOfferActive ? selectedProduct.offerPrice : selectedProduct.price;
+
+            // Update Desktop Side
+            let detailsHtml = `
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-zinc-400 text-sm">Product Pack:</span>
+                    <span class="font-bold text-white text-sm">${selectedProduct.title}</span>
+                </div>
+                <div class="flex justify-between items-center mb-4 border-b border-white/5 pb-4">
+                    <span class="text-zinc-400 text-sm">Retail Value:</span>
+                    <span class="text-zinc-600 line-through text-sm">${formatMoney(selectedProduct.originalPrice)}</span>
+                </div>
+                <div class="flex justify-between items-end">
+                    <span class="text-sm font-bold text-zinc-300">Total Price:</span>
+                    <span class="text-2xl font-black text-shadowRed text-glow-red">${formatMoney(currentPrice)}</span>
+                </div>
+            `;
+            
+            if(isOfferActive) {
+                detailsHtml += `
+                 <div class="mt-4 bg-red-950/20 p-3 rounded-xl text-xs text-center border border-shadowRed/20 text-red-300">
+                    <i class="fa-solid fa-bolt mr-1 text-shadowRed"></i> Special Promo: One-Time Limit. Normal Price: ${formatMoney(selectedProduct.price)}
+                 </div>
+                `;
+            }
+
+            desktopCheckoutDetails.innerHTML = detailsHtml;
+            
+            // Enable Desktop CTA
+            desktopPayBtn.disabled = false;
+            desktopPayBtn.className = "w-full bg-shadowRed hover:bg-shadowRedHover text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all duration-300 shadow-[0_0_20px_rgba(229,9,20,0.4)] border border-transparent cursor-pointer";
+            desktopPayBtn.innerHTML = `Checkout Securely <i class="fa-solid fa-arrow-right ml-1"></i>`;
+            desktopPayBtn.onclick = () => dispatchPayment(activePaymentLink, isOfferActive);
+
+            // Update Mobile Bottom Bar
+            mobilePriceContainer.innerHTML = `
+                <div class="text-zinc-400 text-xs font-medium">${selectedProduct.title}</div>
+                <div class="flex items-center gap-2">
+                    <div class="text-xl font-extrabold text-shadowRed text-glow-red">${formatMoney(currentPrice)}</div>
+                    ${isOfferActive ? '<i class="fa-solid fa-fire-flame-curved text-shadowRed text-sm animate-bounce"></i>' : ''}
+                </div>
+            `;
+
+            // Enable Mobile CTA
+            mobilePayBtn.disabled = false;
+            mobilePayBtn.className = "flex-1 bg-shadowRed hover:bg-shadowRedHover text-white font-bold py-3.5 px-6 rounded-xl transition-all duration-300 shadow-[0_0_20px_rgba(229,9,20,0.4)] flex items-center justify-center gap-2 border border-transparent cursor-pointer";
+            mobilePayBtn.innerHTML = `Pay <i class="fa-solid fa-arrow-right text-xs"></i>`;
+            mobilePayBtn.onclick = () => dispatchPayment(activePaymentLink, isOfferActive);
+        }
+
+        // Open confirm modal block
+        function openConfirmModal(paymentUrl) {
+            const modal = document.getElementById('confirm-modal');
+            const modalContent = document.getElementById('confirm-modal-content');
+            const confirmBtn = document.getElementById('confirm-pay-action-btn');
+
+            confirmBtn.onclick = () => {
+                closeConfirmModal();
+                // Set consumption timestamp to secure offer status in storage (runs reset after 30 days)
+                localStorage.setItem(NEW_CUSTOMER_OFFER_KEY, Date.now().toString());
+                isNewCustomerOfferAvailable = false;
+                executeRedirect(paymentUrl);
+            };
+
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modalContent.classList.remove('scale-95');
+            modalContent.classList.add('scale-100');
+        }
+
+        function closeConfirmModal() {
+            const modal = document.getElementById('confirm-modal');
+            const modalContent = document.getElementById('confirm-modal-content');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            modalContent.classList.remove('scale-100');
+            modalContent.classList.add('scale-95');
+        }
+
+        // Secure transition & redirect sequence
+        function executeRedirect(paymentUrl) {
+            const desktopPayBtn = document.getElementById('desktop-pay-btn');
+            const mobilePayBtn = document.getElementById('mobile-pay-btn');
+
+            const loadingState = '<i class="fa-solid fa-circle-notch fa-spin"></i> Securing Session...';
+            desktopPayBtn.innerHTML = loadingState;
+            mobilePayBtn.innerHTML = loadingState;
+
+            setTimeout(() => {
+                window.location.href = paymentUrl;
+            }, 600);
+        }
+
+        // Trigger safe payment dispatcher
+        function dispatchPayment(paymentUrl, isOfferUsed) {
+            if (isOfferUsed) {
+                openConfirmModal(paymentUrl);
+            } else {
+                executeRedirect(paymentUrl);
+            }
+        }
+
+        // Custom UI Modal Interface
+        function showMessage(title, message, isSuccess = false) {
+            const modal = document.getElementById('message-modal');
+            const modalContent = document.getElementById('message-modal-content');
+            const iconContainer = document.getElementById('modal-icon');
+            
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-message').innerText = message;
+            
+            if (isSuccess) {
+                iconContainer.className = "inline-flex items-center justify-center w-12 h-12 rounded-full bg-emerald-950/30 text-emerald-500 mb-4 border border-emerald-500/20";
+                iconContainer.innerHTML = '<i class="fa-solid fa-circle-check text-xl"></i>';
+            } else {
+                iconContainer.className = "inline-flex items-center justify-center w-12 h-12 rounded-full bg-red-950/30 text-shadowRed mb-4 border border-shadowRed/20";
+                iconContainer.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-xl"></i>';
+            }
+
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modalContent.classList.remove('scale-95');
+            modalContent.classList.add('scale-100');
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('message-modal');
+            const modalContent = document.getElementById('message-modal-content');
+            
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            modalContent.classList.remove('scale-100');
+            modalContent.classList.add('scale-95');
+        }
+
+        // Bootstrap on Page Mount
+        document.addEventListener('DOMContentLoaded', () => {
+            renderProducts();
+        });
+    </script>
+</body>
+</html> 

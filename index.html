@@ -384,7 +384,9 @@
 
         // --- CONFIGURATION SUPABASE (Clés d'API connectées) ---
         const SUPABASE_URL = "https://gupxctcifgizyfczopsj.supabase.co"; 
-        const SUPABASE_KEY = "sb_secret_2-Ssd8QH8E6l7L3p-AX6uA_vWL38u1O"; 
+        
+        // CORRECTION : Utilise UNIQUEMENT la clé "anon" / "public" ici, jamais la "secret" !
+        const SUPABASE_KEY = "sb_publishable_QMtB-zs_1lSxVQTHbStxww_3wBzaBaZ"; 
 
         // Initialisation sécurisée du client Supabase
         let supabaseClient = null;

@@ -278,10 +278,10 @@
                 </div>
                 <h3 class="text-xl font-black text-white mb-2 uppercase tracking-wide">Warning: Promo Offer</h3>
                 <p class="text-gray-400 text-xs md:text-sm leading-relaxed">
-                    This is a <span class="text-shadowRed font-semibold">one-time promotional offer</span>. Once you click "Confirm & Pay", the promo will be marked as used on this device, <span class="text-white font-medium">even if you cancel or close the checkout page</span>.
+                    This is a <span class="text-shadowRed font-semibold">one-time promotional offer</span>. Once you click "Confirm & Pay", the promo will be marked as used on this account, <span class="text-white font-medium">even if you cancel or close the checkout page</span>.
                 </p>
                 <p class="text-zinc-500 text-[11px] mt-3">
-                    The offer resets automatically at midnight.
+                    The offer resets automatically in 30 days.
                 </p>
             </div>
             <div class="flex gap-3">
@@ -389,9 +389,10 @@
             supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         }
 
-        // --- Clés de stockage LocalStorage ---
+        // --- Clés de stockage LocalStorage et Constantes ---
         const USED_PROMOS_KEY = 'shadowplug_used_promos';
         const SESSION_KEY = 'shadowplug_session';
+        const ONE_MONTH_MS = 30 * 24 * 60 * 60 * 1000; // Reset mensuel strict (30 jours)
 
         let activeCategory = 'freefire';
         let selectedProduct = null;
@@ -401,35 +402,40 @@
         let isLoginMode = false;
         let pendingCheckoutParams = null;
 
-        // --- Système intelligent de réinitialisation quotidienne à minuit ---
+        // --- Récupère la clé de stockage des promos personnalisée par compte connecté ---
+        function getPromoStorageKey() {
+            if (currentUser) {
+                // Associe la clé d'enregistrement directement au compte (id ou email)
+                const userIdentifier = currentUser.id || currentUser.email;
+                return `${USED_PROMOS_KEY}_user_${btoa(userIdentifier).replace(/=/g, '')}`;
+            }
+            // Fallback si l'utilisateur est un simple visiteur non-connecté
+            return `${USED_PROMOS_KEY}_guest`;
+        }
+
+        // --- Système intelligent de réinitialisation mensuelle des offres ---
         function getActiveUsedPromos() {
             try {
-                const data = localStorage.getItem(USED_PROMOS_KEY);
+                const key = getPromoStorageKey();
+                const data = localStorage.getItem(key);
                 if (!data) return {};
                 
                 const promos = JSON.parse(data);
-                const now = new Date();
+                const now = Date.now();
                 const activePromos = {};
                 let hasChanged = false;
 
-                // On ne garde l'offre bloquée que si elle a été achetée AUJOURD'HUI
+                // On ne garde la promo bloquée que si elle a été achetée il y a moins de 30 jours
                 for (const [productId, usedTime] of Object.entries(promos)) {
-                    const usedDate = new Date(usedTime);
-                    
-                    // Vérifier si c'est strictement le même jour calendaire (Même Année, Mois, Jour)
-                    const isSameCalendarDay = now.getFullYear() === usedDate.getFullYear() &&
-                                              now.getMonth() === usedDate.getMonth() &&
-                                              now.getDate() === usedDate.getDate();
-
-                    if (isSameCalendarDay) {
+                    if (now - usedTime < ONE_MONTH_MS) {
                         activePromos[productId] = usedTime;
                     } else {
-                        hasChanged = true; // Offre expirée car on a changé de jour ! Elle est réactivée.
+                        hasChanged = true; // Offre expirée car on a dépassé les 30 jours ! Elle est réactivée.
                     }
                 }
 
                 if (hasChanged) {
-                    localStorage.setItem(USED_PROMOS_KEY, JSON.stringify(activePromos));
+                    localStorage.setItem(key, JSON.stringify(activePromos));
                 }
                 return activePromos;
             } catch (e) {
@@ -438,10 +444,44 @@
             }
         }
 
-        // Vérifie si l'offre d'un article spécifique est toujours disponible
+        // Vérifie si l'offre d'un article spécifique est toujours disponible pour ce compte
         function isPromoAvailableForProduct(productId) {
             const activePromos = getActiveUsedPromos();
             return !activePromos[productId];
+        }
+
+        // --- Synchronisation Cloud des offres utilisées avec Supabase pour ce compte ---
+        async function syncUserPromosWithSupabase() {
+            if (!supabaseClient || !currentUser) return;
+            try {
+                const userId = currentUser.id || currentUser.email;
+                const { data, error } = await supabaseClient
+                    .from('user_offers')
+                    .select('product_id, used_at')
+                    .eq('user_id', userId);
+
+                if (!error && data) {
+                    const localKey = getPromoStorageKey();
+                    const localPromos = JSON.parse(localStorage.getItem(localKey) || '{}');
+                    let updated = false;
+
+                    // Ajoute ou met à jour les promos consommées depuis le cloud
+                    data.forEach(row => {
+                        const dbTime = new Date(row.used_at).getTime();
+                        if (!localPromos[row.product_id] || dbTime > localPromos[row.product_id]) {
+                            localPromos[row.product_id] = dbTime;
+                            updated = true;
+                        }
+                    });
+
+                    if (updated) {
+                        localStorage.setItem(localKey, JSON.stringify(localPromos));
+                        renderProducts();
+                    }
+                }
+            } catch (e) {
+                console.error("Erreur synchro cloud promos :", e);
+            }
         }
 
         // --- Logique d'authentification persistante ---
@@ -451,6 +491,8 @@
                 if (sessionData) {
                     currentUser = JSON.parse(sessionData);
                     console.log("Session restaurée pour :", currentUser.email);
+                    // Synchronise les promos consommées sur ce compte
+                    syncUserPromosWithSupabase();
                 }
             } catch (e) {
                 console.error("Erreur chargement session:", e);
@@ -698,7 +740,7 @@
             filtered.forEach(product => {
                 const isSelected = selectedProduct && selectedProduct.id === product.id;
                 
-                // On vérifie la disponibilité de l'offre PROMO uniquement sur cet ID précis
+                // On vérifie la disponibilité de l'offre PROMO uniquement sur cet ID précis et pour ce compte connecté
                 const isOfferActive = product.isSpecialOffer && isPromoAvailableForProduct(product.id);
                 
                 let cardClass = `product-card bg-shadowCard rounded-xl p-1 cursor-pointer flex flex-col h-full z-10 ${isSelected ? 'selected' : ''}`;
@@ -867,23 +909,26 @@
             confirmBtn.onclick = async () => {
                 closeConfirmModal();
                 
-                // 1. Sauvegarde locale : marquer uniquement cet article précis comme utilisé au jour d'aujourd'hui
+                // 1. Sauvegarde locale : marquer uniquement cet article précis comme utilisé pour ce COMPTE connecté
+                const key = getPromoStorageKey();
                 const usedPromos = getActiveUsedPromos();
                 usedPromos[selectedProduct.id] = Date.now();
-                localStorage.setItem(USED_PROMOS_KEY, JSON.stringify(usedPromos));
+                localStorage.setItem(key, JSON.stringify(usedPromos));
                 
-                // 2. Enregistrement dans Supabase si connecté
-                if (supabaseClient && deviceId) {
+                // 2. Enregistrement dans Supabase si connecté (Table user_offers)
+                if (supabaseClient) {
                     try {
+                        const userId = currentUser ? (currentUser.id || currentUser.email) : 'guest';
                         await supabaseClient
-                            .from('device_offers')
+                            .from('user_offers')
                             .insert([{ 
-                                device_fingerprint: deviceId,
+                                user_id: userId,
+                                device_fingerprint: deviceId || 'unknown',
                                 product_id: selectedProduct.id,
                                 used_at: new Date().toISOString()
                             }]);
                     } catch (err) {
-                        console.error("Erreur d'envoi de l'empreinte :", err);
+                        console.error("Erreur d'envoi de la promo consommée à Supabase :", err);
                     }
                 }
                 
@@ -1019,6 +1064,10 @@
                     localStorage.setItem(SESSION_KEY, JSON.stringify(currentUser));
                     updateUserHeaderUI();
                     
+                    // Synchronisation immédiate des offres pour ce compte
+                    syncUserPromosWithSupabase();
+                    renderProducts();
+                    
                     closeAuthModal();
                     if (pendingCheckoutParams) {
                         dispatchPayment(pendingCheckoutParams.url, pendingCheckoutParams.isOfferUsed);
@@ -1045,6 +1094,10 @@
                 // Sauvegarde de l'utilisateur Supabase dans le LocalStorage
                 localStorage.setItem(SESSION_KEY, JSON.stringify(currentUser));
                 updateUserHeaderUI();
+
+                // Synchronisation cloud immédiate des offres de ce compte
+                await syncUserPromosWithSupabase();
+                renderProducts();
 
                 closeAuthModal();
                 if (pendingCheckoutParams) {
@@ -1080,6 +1133,8 @@
                         currentUser = data.session.user;
                         localStorage.setItem(SESSION_KEY, JSON.stringify(currentUser));
                         updateUserHeaderUI();
+                        // Récupère les offres du compte
+                        await syncUserPromosWithSupabase();
                     }
                 } catch(e) { console.error("Auth init error:", e); }
             }
